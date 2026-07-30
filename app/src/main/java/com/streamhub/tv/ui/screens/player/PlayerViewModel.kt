@@ -3,7 +3,6 @@ package com.streamhub.tv.ui.screens.player
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -14,6 +13,7 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.streamhub.tv.data.model.Channel
+import com.streamhub.tv.data.model.StreamSource
 import com.streamhub.tv.data.model.StreamType
 import com.streamhub.tv.data.repository.ChannelRepository
 import com.streamhub.tv.data.repository.FavoritesRepository
@@ -34,7 +34,10 @@ data class PlayerUiState(
     val isBuffering: Boolean = true,
     val isFavorite: Boolean = false,
     val errorMessage: String? = null,
-    val reconnectAttempt: Int = 0
+    val reconnectAttempt: Int = 0,
+    val isPlaying: Boolean = true,
+    val availableSources: List<StreamSource> = emptyList(),
+    val selectedSourceIndex: Int = 0
 )
 
 private const val MAX_RECONNECT_ATTEMPTS = 5
@@ -64,6 +67,10 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
 
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    _uiState.value = _uiState.value.copy(isPlaying = isPlaying)
+                }
+
                 override fun onPlayerError(error: PlaybackException) {
                     _uiState.value = _uiState.value.copy(
                         errorMessage = error.message ?: "Playback error",
@@ -86,35 +93,56 @@ class PlayerViewModel @Inject constructor(
 
             _uiState.value = _uiState.value.copy(
                 channel = channel,
-                allChannelsInCategory = sameCategory
+                allChannelsInCategory = sameCategory,
+                availableSources = channel?.allSources.orEmpty(),
+                selectedSourceIndex = 0
             )
 
             channel?.let {
                 _uiState.value = _uiState.value.copy(isFavorite = favoritesRepository.isFavorite(it.id))
                 watchHistoryRepository.recordWatch(it)
-                play(it)
+                playSource(it.allSources.first().url)
             }
         }
     }
 
-    private fun play(channel: Channel) {
-        val mediaSource = buildMediaSource(channel)
+    private fun playSource(url: String) {
+        val mediaSource = buildMediaSource(url)
         exoPlayer.setMediaSource(mediaSource)
         exoPlayer.prepare()
         exoPlayer.playWhenReady = true
     }
 
-    private fun buildMediaSource(channel: Channel): MediaSource {
+    private fun buildMediaSource(url: String): MediaSource {
         val dataSourceFactory = OkHttpDataSource.Factory(okHttpClient)
-        val mediaItem = MediaItem.fromUri(channel.streamUrl)
-        return when (channel.streamType) {
+        val mediaItem = MediaItem.fromUri(url)
+        val type = _uiState.value.channel?.streamTypeOf(url) ?: StreamType.OTHER
+        return when (type) {
             StreamType.HLS -> HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
             StreamType.DASH -> DashMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
             else -> ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
         }
     }
 
-    /** Auto-reconnect with exponential backoff, up to [MAX_RECONNECT_ATTEMPTS] attempts. */
+    /** Switch to a different mirror/server for the *same* channel (from the ⚙ source picker). */
+    fun selectSource(index: Int) {
+        val sources = _uiState.value.availableSources
+        if (index !in sources.indices) return
+        _uiState.value = _uiState.value.copy(
+            selectedSourceIndex = index,
+            errorMessage = null,
+            reconnectAttempt = 0
+        )
+        playSource(sources[index].url)
+    }
+
+    fun togglePlayPause() {
+        exoPlayer.playWhenReady = !exoPlayer.playWhenReady
+    }
+
+    /** Auto-reconnect with exponential backoff, up to [MAX_RECONNECT_ATTEMPTS] attempts.
+     *  If more than one source is available, each retry also rotates to the next
+     *  server, so a dead mirror doesn't get retried forever while a working one sits idle. */
     private fun attemptReconnect() {
         reconnectJob?.cancel()
         val attempt = _uiState.value.reconnectAttempt + 1
@@ -122,21 +150,35 @@ class PlayerViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(reconnectAttempt = attempt)
         reconnectJob = viewModelScope.launch {
             delay(1500L * attempt)
-            _uiState.value.channel?.let { play(it) }
+            val sources = _uiState.value.availableSources
+            if (sources.size > 1) {
+                val nextIndex = (_uiState.value.selectedSourceIndex + 1) % sources.size
+                _uiState.value = _uiState.value.copy(selectedSourceIndex = nextIndex)
+                playSource(sources[nextIndex].url)
+            } else {
+                sources.firstOrNull()?.let { playSource(it.url) }
+            }
         }
     }
 
     fun retryNow() {
         _uiState.value = _uiState.value.copy(reconnectAttempt = 0, errorMessage = null)
-        _uiState.value.channel?.let { play(it) }
+        val sources = _uiState.value.availableSources
+        sources.getOrNull(_uiState.value.selectedSourceIndex)?.let { playSource(it.url) }
     }
 
     fun switchChannel(channel: Channel) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(channel = channel, errorMessage = null, reconnectAttempt = 0)
+            _uiState.value = _uiState.value.copy(
+                channel = channel,
+                errorMessage = null,
+                reconnectAttempt = 0,
+                availableSources = channel.allSources,
+                selectedSourceIndex = 0
+            )
             _uiState.value = _uiState.value.copy(isFavorite = favoritesRepository.isFavorite(channel.id))
             watchHistoryRepository.recordWatch(channel)
-            play(channel)
+            playSource(channel.allSources.first().url)
         }
     }
 
