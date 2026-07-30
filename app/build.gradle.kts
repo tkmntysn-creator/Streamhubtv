@@ -92,8 +92,8 @@ dependencies {
     implementation("androidx.compose.material3.adaptive:adaptive:1.0.0")
 
     // TV Compose (Android TV specific components: focus, D-pad navigation)
-    implementation("androidx.tv:tv-foundation:1.0.0-alpha11")
-    implementation("androidx.tv:tv-material:1.0.0-alpha11")
+    implementation("androidx.tv:tv-foundation:1.0.0")
+    implementation("androidx.tv:tv-material:1.1.0")
     implementation("androidx.leanback:leanback:1.0.0")
 
     // Hilt
