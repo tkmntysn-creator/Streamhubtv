@@ -46,6 +46,18 @@ fun AdaptiveNavScaffold(
         }
     }
 
+    // The Player screen owns the entire screen (video should never share space with
+    // app chrome), so we skip the Scaffold/Rail wrapper completely for it. This also
+    // fixes a rotation bug: previously, rotating the phone while the player was open
+    // could flip `useRail` (since width/height swap on rotation), tearing down and
+    // re-creating the whole content subtree - which reset the player's local
+    // `isFullscreen` state back to false right after the user turned it on.
+    val isPlayerRoute = currentDestination?.route == Destination.Player.route
+    if (isPlayerRoute) {
+        content(Modifier.fillMaxSize())
+        return
+    }
+
     if (useRail) {
         Row(modifier = Modifier.fillMaxSize()) {
             NavigationRail {
