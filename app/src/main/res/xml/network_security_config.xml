@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Many free/public IPTV streams are served over plain HTTP.
+    This config allows cleartext traffic for all domains so the player
+    can connect to such streams, while still using HTTPS wherever the
+    channel JSON provides it.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
