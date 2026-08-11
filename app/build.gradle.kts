@@ -22,11 +22,10 @@ android {
 
         // Default GitHub raw JSON URL - can be changed at runtime from Settings > Repository
         buildConfigField(
-            "String",
-            "DEFAULT_CHANNELS_URL",
-            "\"https://raw.githubusercontent.com/streamhub-tv/channels/main/channels.json\""
-        )
-    }
+    "String",
+    "DEFAULT_CHANNELS_URL",
+    "\"https://raw.githubusercontent.com/tkmntysn-creator/Channels/main/channels.json\""
+)
 
     buildTypes {
         release {
