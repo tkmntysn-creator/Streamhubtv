@@ -27,7 +27,9 @@ android {
     "\"https://raw.githubusercontent.com/tkmntysn-creator/Channels/main/channels.json\""
 )
 
-    buildTypes {
+}
+
+buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
