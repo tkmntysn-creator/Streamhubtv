@@ -49,7 +49,7 @@ com.streamhub.tv
 2. `ChannelRepository.fetchChannels()` downloads and parses `channels.json` via Retrofit + Kotlinx Serialization.
 3. On success, the JSON is cached in Room (`channel_cache` table) together with the source URL and timestamp.
 4. On failure (offline, 404, timeout, malformed JSON), the repository transparently falls back to the last cached payload so the UI never breaks.
-5. Pulling to refresh, tapping the Home refresh icon, or re-opening the app re-triggers step 2 — so edits made to `channels.json` on GitHub reach every installed copy of the app without a Play Store update.
+5. Pulling to refresh or explicitly retrying triggers step 2 — so edits made to `channels.json` on GitHub reach every installed copy of the app without a Play Store update. Re-opening the app uses the matching Room cache first for a faster launch.
 
 ### `channels.json` schema
 
@@ -81,6 +81,12 @@ A ready-to-use example covering every category requested in the spec (Sports 1�
 ## 🚀 Startup experience
 
 The app opens directly to the main TV interface. The previous first-launch activation-code gate has been removed so users can start browsing channels immediately. Repository and channel settings remain available from **Settings → Repository Configuration**.
+
+## 🎨 Visual direction and performance
+
+The mobile Home screen uses the **Midnight Broadcast** direction: a compact cinematic live spotlight, quiet dark surfaces, cobalt/cyan signal accents, stable category rows, and the floating Liquid Glass navigation bar. Channel rows use stable lazy-list keys, cached images without unnecessary crossfades, and a cache-first catalogue path so the last known channel list appears without waiting for the network.
+
+Use [`sample-data/channels-template.json`](sample-data/channels-template.json) as the safe starting point for adding your own licensed channels. Replace the example domains, logos, stream URLs, and metadata before uploading the file to your Channels repository.
 
 ## ▶️ Player features (Media3 ExoPlayer)
 

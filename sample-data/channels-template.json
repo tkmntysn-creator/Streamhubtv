@@ -1,0 +1,39 @@
+{
+  "updatedAt": "2026-10-19T00:00:00Z",
+  "channels": [
+    {
+      "id": "news_local_1",
+      "name": "Your News Channel",
+      "logo": "https://your-domain.example/assets/news-local-1.png",
+      "category": "News",
+      "provider": "Your Provider",
+      "streamUrl": "https://your-domain.example/live/news-local-1/index.m3u8",
+      "description": "24/7 local news channel",
+      "country": "Your Country",
+      "language": "Arabic",
+      "enabled": true,
+      "sources": [
+        {
+          "label": "Primary",
+          "url": "https://your-domain.example/live/news-local-1/index.m3u8"
+        },
+        {
+          "label": "Backup",
+          "url": "https://backup.your-domain.example/live/news-local-1/index.m3u8"
+        }
+      ]
+    },
+    {
+      "id": "sports_local_1",
+      "name": "Your Sports Channel",
+      "logo": "https://your-domain.example/assets/sports-local-1.png",
+      "category": "Sports",
+      "provider": "Your Provider",
+      "streamUrl": "https://your-domain.example/live/sports-local-1/index.m3u8",
+      "description": "Live sports coverage",
+      "country": "Your Country",
+      "language": "Arabic",
+      "enabled": true
+    }
+  ]
+}

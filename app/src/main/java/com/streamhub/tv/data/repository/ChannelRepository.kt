@@ -38,8 +38,11 @@ class ChannelRepository @Inject constructor(
         val url = preferencesManager.repoUrl.first()
 
         if (!forceRefresh) {
-            // Fast path: return cache immediately if present, caller can still trigger a
-            // background refresh separately via refreshInBackground().
+            // Render the last known catalogue immediately. Network refreshes are explicit
+            // so opening Home never blocks on a slow or unavailable server.
+            cacheDao.getCache()?.takeIf { it.sourceUrl == url }?.let { cached ->
+                return decodeCached(cached.json)
+            }
         }
 
         return try {
@@ -76,14 +79,19 @@ class ChannelRepository @Inject constructor(
     private suspend fun fallbackToCache(errorMessage: String?): Resource<List<Channel>> {
         val cached = cacheDao.getCache()
         return if (cached != null) {
-            try {
-                val parsed = json.decodeFromString(ChannelsResponse.serializer(), cached.json)
-                Resource.Success(parsed.channels.filter { it.enabled })
-            } catch (e: Exception) {
-                Resource.Error(errorMessage ?: "Failed to read cached channel data")
-            }
+            decodeCached(cached.json, errorMessage)
         } else {
             Resource.Error(errorMessage ?: "No channels available and no cache found")
         }
+    }
+
+    private fun decodeCached(
+        payload: String,
+        errorMessage: String? = null
+    ): Resource<List<Channel>> = try {
+        val parsed = json.decodeFromString(ChannelsResponse.serializer(), payload)
+        Resource.Success(parsed.channels.filter { it.enabled })
+    } catch (e: Exception) {
+        Resource.Error(errorMessage ?: "Failed to read cached channel data")
     }
 }

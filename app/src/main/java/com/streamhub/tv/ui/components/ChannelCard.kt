@@ -30,9 +30,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.streamhub.tv.data.model.Channel
 import com.streamhub.tv.ui.theme.AppRadii
 
@@ -65,7 +67,10 @@ fun ChannelCard(
                 .border(1.dp, Color.White.copy(alpha = 0.08f), AppRadii.Card)
         ) {
             AsyncImage(
-                model = channel.logo,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(channel.logo)
+                    .crossfade(false)
+                    .build(),
                 contentDescription = channel.name,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop

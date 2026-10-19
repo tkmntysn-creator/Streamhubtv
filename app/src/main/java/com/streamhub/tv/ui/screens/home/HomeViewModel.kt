@@ -10,10 +10,7 @@ import com.streamhub.tv.data.repository.WatchHistoryRepository
 import com.streamhub.tv.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -62,8 +59,10 @@ class HomeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             isLoading = false,
             errorMessage = null,
-            featured = channels.shuffled().take(8),
-            recommended = channels.shuffled().take(10),
+            // Stable ordering prevents the spotlight from changing and avoids
+            // rebuilding duplicate recommendation rows on every refresh.
+            featured = channels.take(1),
+            recommended = emptyList(),
             categorized = categorized
         )
         observeRecentlyWatched(channels)

@@ -56,7 +56,11 @@ fun CategoryRow(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(channels) { channel ->
+            items(
+                items = channels,
+                key = { it.id },
+                contentType = { "channel-card" }
+            ) { channel ->
                 ChannelCard(
                     channel = channel,
                     isFavorite = favoriteIds.contains(channel.id),
