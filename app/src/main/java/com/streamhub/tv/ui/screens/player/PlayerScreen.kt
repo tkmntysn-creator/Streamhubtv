@@ -9,6 +9,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BrightnessMedium
@@ -36,10 +38,13 @@ import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.ui.PlayerView
+import androidx.media3.ui.AspectRatioFrameLayout
 import coil.compose.AsyncImage
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.delay
@@ -108,13 +114,15 @@ fun PlayerScreen(
     // null = hidden, true = forward (+10s), false = backward (-10s)
     var seekFeedback by remember { mutableStateOf<Boolean?>(null) }
     var showSourceSheet by remember { mutableStateOf(false) }
+    var showChannelSheet by remember { mutableStateOf(false) }
     val sourceSheetState = rememberModalBottomSheetState()
+    val channelSheetState = rememberModalBottomSheetState()
 
     LaunchedEffect(channelId) { viewModel.loadChannel(channelId) }
 
     LaunchedEffect(controlsVisible, state.isBuffering, state.errorMessage) {
         if (controlsVisible && !state.isBuffering && state.errorMessage == null) {
-            delay(5000)
+            delay(4000)
             controlsVisible = false
         }
     }
@@ -151,6 +159,8 @@ fun PlayerScreen(
                 PlayerView(it).apply {
                     player = viewModel.exoPlayer
                     useController = false
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -270,8 +280,8 @@ fun PlayerScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.82f), Color.Transparent)))
+                    .padding(horizontal = 14.dp, vertical = 16.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -283,29 +293,45 @@ fun PlayerScreen(
                             Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
                         state.channel?.let { channel ->
-                            AsyncImage(
-                                model = channel.logo,
-                                contentDescription = null,
-                                modifier = Modifier.size(36.dp).clip(CircleShape).padding(start = 4.dp)
-                            )
-                            Column(modifier = Modifier.padding(start = 10.dp)) {
-                                Text(channel.name, color = Color.White, style = MaterialTheme.typography.titleMedium)
-                                Text(
-                                    channel.category,
-                                    color = Color.White.copy(alpha = 0.75f),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                            Row(
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.16f), RoundedCornerShape(20.dp))
+                                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (channel.logo.isNotBlank()) {
+                                    AsyncImage(
+                                        model = channel.logo,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(30.dp).clip(CircleShape)
+                                    )
+                                }
+                                Column(modifier = Modifier.padding(start = 9.dp)) {
+                                    Text(channel.name, color = Color.White, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.LiveTv, contentDescription = null, tint = Color(0xFFFF5B62), modifier = Modifier.size(13.dp))
+                                        Text(" LIVE  ·  ${channel.category}", color = Color.White.copy(alpha = 0.72f), style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
                             }
                         }
                     }
-                    RoundIconButton(onClick = {
-                        activity?.enterPictureInPictureMode(
-                            PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
-                        )
-                    }) {
-                        Icon(Icons.Filled.PictureInPicture, contentDescription = "Picture in Picture", tint = Color.White)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        RoundIconButton(onClick = { showChannelSheet = true }) {
+                            Icon(Icons.Filled.List, contentDescription = "Channel guide", tint = Color.White)
+                        }
+                        RoundIconButton(onClick = {
+                            activity?.enterPictureInPictureMode(
+                                PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+                            )
+                        }) {
+                            Icon(Icons.Filled.PictureInPicture, contentDescription = "Picture in Picture", tint = Color.White)
+                        }
                     }
-                }
+                )
             }
         }
 
@@ -328,56 +354,70 @@ fun PlayerScreen(
             }
         }
 
-        // Minimal bottom bar - just 5 essentials: prev, favorite, servers, fullscreen, next
+        // Signal Glass transport dock: essential live-TV actions only.
         AnimatedVisibility(
             visible = showChrome,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))))
-                    .padding(horizontal = 12.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.82f))))
+                    .padding(horizontal = 14.dp, vertical = 14.dp)
             ) {
-                RoundIconButton(onClick = {
-                    val index = state.allChannelsInCategory.indexOfFirst { it.id == state.channel?.id }
-                    if (index > 0) viewModel.switchChannel(state.allChannelsInCategory[index - 1])
-                }) {
-                    Icon(Icons.Filled.SkipPrevious, contentDescription = "Previous channel", tint = Color.White)
-                }
-
-                RoundIconButton(onClick = viewModel::toggleFavorite) {
-                    Icon(
-                        imageVector = if (state.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = "Toggle favorite",
-                        tint = if (state.isFavorite) MaterialTheme.colorScheme.tertiary else Color.White
-                    )
-                }
-
-                RoundIconButton(onClick = { showSourceSheet = true }) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Server settings", tint = Color.White)
-                }
-
-                RoundIconButton(onClick = { isFullscreen = !isFullscreen }) {
-                    Icon(
-                        imageVector = if (isFullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
-                        contentDescription = "Toggle fullscreen",
-                        tint = Color.White
-                    )
-                }
-
-                RoundIconButton(onClick = {
-                    val index = state.allChannelsInCategory.indexOfFirst { it.id == state.channel?.id }
-                    if (index in 0 until state.allChannelsInCategory.size - 1) {
-                        viewModel.switchChannel(state.allChannelsInCategory[index + 1])
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(Color.White.copy(alpha = 0.11f))
+                        .border(1.dp, Color.White.copy(alpha = 0.16f), RoundedCornerShape(26.dp))
+                        .padding(horizontal = 8.dp, vertical = 7.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RoundIconButton(onClick = {
+                        val index = state.allChannelsInCategory.indexOfFirst { it.id == state.channel?.id }
+                        if (index > 0) viewModel.switchChannel(state.allChannelsInCategory[index - 1])
+                    }) {
+                        Icon(Icons.Filled.SkipPrevious, contentDescription = "Previous channel", tint = Color.White)
                     }
-                }) {
-                    Icon(Icons.Filled.SkipNext, contentDescription = "Next channel", tint = Color.White)
+                    RoundIconButton(onClick = viewModel::toggleFavorite) {
+                        Icon(
+                            imageVector = if (state.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = "Toggle favorite",
+                            tint = if (state.isFavorite) MaterialTheme.colorScheme.tertiary else Color.White
+                        )
+                    }
+                    RoundIconButton(onClick = { showChannelSheet = true }) {
+                        Icon(Icons.Filled.List, contentDescription = "Channel guide", tint = Color.White)
+                    }
+                    RoundIconButton(onClick = { showSourceSheet = true }) {
+                        Icon(Icons.Filled.Tune, contentDescription = "Playback options", tint = Color.White)
+                    }
+                    RoundIconButton(onClick = { isFullscreen = !isFullscreen }) {
+                        Icon(
+                            imageVector = if (isFullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
+                            contentDescription = "Toggle fullscreen",
+                            tint = Color.White
+                        )
+                    }
+                    RoundIconButton(onClick = {
+                        val index = state.allChannelsInCategory.indexOfFirst { it.id == state.channel?.id }
+                        if (index in 0 until state.allChannelsInCategory.size - 1) {
+                            viewModel.switchChannel(state.allChannelsInCategory[index + 1])
+                        }
+                    }) {
+                        Icon(Icons.Filled.SkipNext, contentDescription = "Next channel", tint = Color.White)
+                    }
                 }
+                Text(
+                    text = "Double-tap to seek  ·  Swipe vertically for volume / brightness",
+                    color = Color.White.copy(alpha = 0.55f),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
+                )
             }
         }
 
@@ -438,6 +478,57 @@ fun PlayerScreen(
                         Text(source.label, style = MaterialTheme.typography.titleMedium)
                         if (selected) {
                             Icon(Icons.Filled.Check, contentDescription = "Currently selected", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showChannelSheet) {
+        ModalBottomSheet(onDismissRequest = { showChannelSheet = false }, sheetState = channelSheetState) {
+            Column(modifier = Modifier.padding(bottom = 24.dp)) {
+                Text(
+                    "Live guide",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                )
+                Text(
+                    "More from ${state.channel?.category ?: "this category"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+                )
+                state.allChannelsInCategory.forEach { channel ->
+                    val selected = channel.id == state.channel?.id
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.switchChannel(channel)
+                                showChannelSheet = false
+                            }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (channel.logo.isNotBlank()) {
+                            AsyncImage(
+                                model = channel.logo,
+                                contentDescription = null,
+                                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) { Icon(Icons.Filled.LiveTv, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                        }
+                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text(channel.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                            Text(channel.country.ifBlank { channel.category }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (selected) {
+                            Icon(Icons.Filled.Check, contentDescription = "Currently playing", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }

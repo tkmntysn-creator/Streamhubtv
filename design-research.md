@@ -21,3 +21,11 @@ Android's Baseline Profile guidance notes that baseline profiles improve first-l
 - Disable unnecessary image crossfades and use Coil's memory/disk cache.
 - Prefer Room cache immediately when available; only fetch from the network when there is no cache or the user explicitly refreshes.
 - Keep the external Channels repository intact because its stream rights and availability are not verified here. Provide a clean JSON starter template instead of overwriting the user's catalogue.
+
+## Player direction
+
+Apple's Playing Video guidance recommends using familiar system-player behavior when building a custom player, preserving the video's original aspect ratio, keeping overlays limited, starting playback immediately, and showing only a minimal black loading state when needed. Source: https://developer.apple.com/design/human-interface-guidelines/playing-video
+
+Apple's tvOS playback guidance places common actions in a transport bar, supports contextual custom actions and content tabs, and favors quick access to favorite/PiP/preferences without covering the media. Source: https://developer.apple.com/documentation/avkit/customizing-the-tvos-playback-experience
+
+The new player direction is **Signal Glass Player**: a wide video-first surface, a single centered play/pause control, a compact translucent top identity strip, a bottom transport dock with favorite/source/fullscreen/channel actions, and a channel-switcher sheet for live flipping. Controls auto-hide quickly, use short fades, and do not add decorative overlays over the stream.
