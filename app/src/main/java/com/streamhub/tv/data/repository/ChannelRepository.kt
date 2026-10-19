@@ -37,16 +37,16 @@ class ChannelRepository @Inject constructor(
     suspend fun fetchChannels(forceRefresh: Boolean = false): Resource<List<Channel>> {
         val url = preferencesManager.repoUrl.first()
 
-        if (!forceRefresh) {
-            // Render the last known catalogue immediately. Network refreshes are explicit
-            // so opening Home never blocks on a slow or unavailable server.
-            cacheDao.getCache()?.takeIf { it.sourceUrl == url }?.let { cached ->
-                return decodeCached(cached.json)
-            }
-        }
-
         return try {
-            val response = api.getChannels(url)
+            // Always revalidate on app/screen open. The old cache-first shortcut made
+            // edits to the remote channels.json invisible forever on installed builds.
+            // Keep Room as an offline fallback, while bypassing GitHub's raw edge cache.
+            val requestUrl = if (url.contains("raw.githubusercontent.com")) {
+                url + (if (url.contains("?")) "&" else "?") + "refresh=${System.currentTimeMillis()}"
+            } else {
+                url
+            }
+            val response = api.getChannels(requestUrl)
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
                 persistCache(body, url)

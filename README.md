@@ -49,7 +49,7 @@ com.streamhub.tv
 2. `ChannelRepository.fetchChannels()` downloads and parses `channels.json` via Retrofit + Kotlinx Serialization.
 3. On success, the JSON is cached in Room (`channel_cache` table) together with the source URL and timestamp.
 4. On failure (offline, 404, timeout, malformed JSON), the repository transparently falls back to the last cached payload so the UI never breaks.
-5. Pulling to refresh or explicitly retrying triggers step 2 — so edits made to `channels.json` on GitHub reach every installed copy of the app without a Play Store update. Re-opening the app uses the matching Room cache first for a faster launch.
+5. Opening Home, Channels, or Search revalidates the remote JSON automatically; Room remains an offline fallback. Pulling to refresh or explicitly retrying also triggers step 2, so edits made to `channels.json` reach installed copies after the updated APK is installed.
 
 ### `channels.json` schema
 
@@ -85,7 +85,7 @@ The app opens directly to the main TV interface. The previous first-launch activ
 
 ## 🎨 Visual direction and performance
 
-The mobile Home screen uses the **Midnight Broadcast** direction: a compact cinematic live spotlight, quiet dark surfaces, cobalt/cyan signal accents, stable category rows, and the floating Liquid Glass navigation bar. Channel rows use stable lazy-list keys, cached images without unnecessary crossfades, and a cache-first catalogue path so the last known channel list appears without waiting for the network.
+The mobile Home screen uses the **Midnight Broadcast** direction: a compact cinematic live spotlight, quiet dark surfaces, cobalt/cyan signal accents, stable category rows, and the floating Liquid Glass navigation bar. Channel rows use stable lazy-list keys and cached images without unnecessary crossfades; Room is retained as an offline fallback while the remote catalogue is revalidated automatically.
 
 Use [`sample-data/channels-template.json`](sample-data/channels-template.json) as the safe starting point for adding your own licensed channels. Replace the example domains, logos, stream URLs, and metadata before uploading the file to your Channels repository.
 
