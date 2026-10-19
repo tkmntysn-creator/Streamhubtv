@@ -1,5 +1,6 @@
 package com.streamhub.tv.ui.screens.search
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,17 +11,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.streamhub.tv.ui.components.ChannelCard
@@ -32,41 +37,55 @@ fun SearchScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Search", style = MaterialTheme.typography.headlineMedium)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 20.dp)
+    ) {
+        Text(
+            text = "Search",
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.padding(top = 20.dp, bottom = 18.dp)
+        )
         OutlinedTextField(
             value = state.query,
             onValueChange = viewModel::onQueryChange,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            placeholder = { Text("Search by name, category, country, language") },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Channels, providers, languages") },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            singleLine = true
+            trailingIcon = { Icon(Icons.Filled.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            singleLine = true,
+            shape = RoundedCornerShape(19.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = Color.Transparent
+            )
         )
 
         when {
-            state.query.isBlank() -> Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Start typing to find channels instantly",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-            }
-            state.results.isEmpty() -> Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No channels found for \"${state.query}\"")
-            }
+            state.query.isBlank() -> SearchEmptyState(
+                title = "Find your next live moment",
+                subtitle = "Search by channel, category, country, or language."
+            )
+            state.results.isEmpty() -> SearchEmptyState(
+                title = "No channels found",
+                subtitle = "Try a different name, provider, or category."
+            )
             else -> LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 150.dp),
-                contentPadding = PaddingValues(vertical = 8.dp),
+                columns = GridCells.Adaptive(minSize = 148.dp),
+                contentPadding = PaddingValues(top = 20.dp, bottom = 118.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(state.results, key = { it.id }) { channel ->
+                items(
+                    items = state.results,
+                    key = { it.id },
+                    contentType = { "search-channel" }
+                ) { channel ->
                     ChannelCard(
                         channel = channel,
                         isFavorite = state.favoriteIds.contains(channel.id),
@@ -76,6 +95,27 @@ fun SearchScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SearchEmptyState(title: String, subtitle: String) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 14.dp)
+            )
+            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp)
+            )
         }
     }
 }

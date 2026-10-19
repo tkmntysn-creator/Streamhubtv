@@ -30,6 +30,7 @@ data class Channel(
     @SerialName("name") val name: String,
     @SerialName("logo") val logo: String = "",
     @SerialName("category") val category: String,
+    @SerialName("provider") val provider: String = "",
     @SerialName("streamUrl") val streamUrl: String,
     @SerialName("description") val description: String = "",
     @SerialName("country") val country: String = "",

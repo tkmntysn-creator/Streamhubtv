@@ -13,11 +13,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class ChannelSort(val label: String) {
+    SMART("Smart order"),
+    ALPHABETICAL("A–Z"),
+    PROVIDER("Provider"),
+    COUNTRY("Country")
+}
+
 data class LiveTvUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
+    val channels: List<Channel> = emptyList(),
     val categorized: Map<ChannelCategory, List<Channel>> = emptyMap(),
     val selectedCategory: ChannelCategory? = null,
+    val sort: ChannelSort = ChannelSort.SMART,
     val favoriteIds: Set<String> = emptySet()
 )
 
@@ -45,6 +54,7 @@ class LiveTvViewModel @Inject constructor(
             when (val result = channelRepository.fetchChannels(forceRefresh)) {
                 is Resource.Success -> _uiState.value = _uiState.value.copy(
                     isLoading = false,
+                    channels = result.data,
                     categorized = result.data.groupBy { ChannelCategory.from(it.category) }
                 )
                 is Resource.Error -> _uiState.value = _uiState.value.copy(
@@ -58,6 +68,10 @@ class LiveTvViewModel @Inject constructor(
 
     fun selectCategory(category: ChannelCategory?) {
         _uiState.value = _uiState.value.copy(selectedCategory = category)
+    }
+
+    fun setSort(sort: ChannelSort) {
+        _uiState.value = _uiState.value.copy(sort = sort)
     }
 
     fun toggleFavorite(channel: Channel) {

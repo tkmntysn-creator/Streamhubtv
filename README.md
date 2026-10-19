@@ -62,6 +62,7 @@ com.streamhub.tv
       "name": "Sports 1",
       "logo": "https://.../sports1.png",
       "category": "Sports",
+      "provider": "Your Provider",
       "streamUrl": "https://.../sports1/index.m3u8",
       "description": "24/7 live sports coverage",
       "country": "Global",
@@ -72,7 +73,7 @@ com.streamhub.tv
 }
 ```
 
-A ready-to-use example covering every category requested in the spec (Sports 1–10, News, Movies, Series, Kids, Documentary, Religious, Entertainment — 40 channels total) is provided in [`sample-data/channels.json`](sample-data/channels.json). Upload it to a public GitHub repo, copy its **raw** URL, and paste it into Settings → Repository Configuration.
+A safe starter template is provided in [`sample-data/channels-template.json`](sample-data/channels-template.json). The connected `Channels` repository was intentionally reset to an empty catalogue; add only your own licensed streams there.
 
 > ⚠️ The sample file uses a public HLS test stream (`test-streams.mux.dev`) as a placeholder for most entries — replace `streamUrl` values with your real, licensed stream sources before shipping.
 
@@ -87,6 +88,8 @@ The app opens directly to the main TV interface. The previous first-launch activ
 The mobile Home screen uses the **Midnight Broadcast** direction: a compact cinematic live spotlight, quiet dark surfaces, cobalt/cyan signal accents, stable category rows, and the floating Liquid Glass navigation bar. Channel rows use stable lazy-list keys, cached images without unnecessary crossfades, and a cache-first catalogue path so the last known channel list appears without waiting for the network.
 
 Use [`sample-data/channels-template.json`](sample-data/channels-template.json) as the safe starting point for adding your own licensed channels. Replace the example domains, logos, stream URLs, and metadata before uploading the file to your Channels repository.
+
+Settings, Search, and Channels now use one iOS-inspired language: large titles, grouped rounded cards, restrained blue controls, and compact spacing. Channels can be arranged with **Smart order**, **A–Z**, **Provider**, or **Country**, then filtered by category.
 
 ## ▶️ Player features (Media3 ExoPlayer)
 

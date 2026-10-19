@@ -1,24 +1,41 @@
 package com.streamhub.tv.ui.screens.livetv
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.streamhub.tv.data.model.Channel
@@ -27,38 +44,39 @@ import com.streamhub.tv.ui.components.ChannelCard
 import com.streamhub.tv.ui.components.FullScreenError
 import com.streamhub.tv.ui.components.FullScreenLoading
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LiveTvScreen(
     onChannelClick: (String) -> Unit,
     viewModel: LiveTvViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val channels = visibleChannels(state)
 
-    androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Live TV", style = MaterialTheme.typography.headlineMedium) })
-
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 20.dp)
+    ) {
+        Text(
+            text = "Channels",
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.padding(top = 20.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 18.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            item {
-                FilterChip(
-                    selected = state.selectedCategory == null,
-                    onClick = { viewModel.selectCategory(null) },
-                    label = { Text("All") }
-                )
-            }
-            items(ChannelCategory.orderedCategories) { category ->
-                if (state.categorized[category]?.isNotEmpty() == true) {
-                    FilterChip(
-                        selected = state.selectedCategory == category,
-                        onClick = { viewModel.selectCategory(category) },
-                        label = { Text(category.displayName) }
-                    )
-                }
-            }
+            Text(
+                text = "${state.channels.size} live destinations",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            SortMenu(selected = state.sort, onSelected = viewModel::setSort)
         }
+
+        CategoryFilterRow(state = state, onSelect = viewModel::selectCategory)
 
         when {
             state.isLoading && state.categorized.isEmpty() -> FullScreenLoading()
@@ -66,30 +84,122 @@ fun LiveTvScreen(
                 message = state.errorMessage ?: "Unknown error",
                 onRetry = { viewModel.load(forceRefresh = true) }
             )
-            else -> {
-                val channels: List<Channel> = if (state.selectedCategory != null) {
-                    state.categorized[state.selectedCategory].orEmpty()
-                } else {
-                    ChannelCategory.orderedCategories.flatMap { state.categorized[it].orEmpty() }
-                }
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 150.dp),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(channels, key = { it.id }) { channel ->
-                        ChannelCard(
-                            channel = channel,
-                            isFavorite = state.favoriteIds.contains(channel.id),
-                            onClick = { onChannelClick(channel.id) },
-                            onToggleFavorite = { viewModel.toggleFavorite(channel) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+            channels.isEmpty() -> EmptyChannels()
+            else -> LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 148.dp),
+                contentPadding = PaddingValues(top = 20.dp, bottom = 118.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(
+                    items = channels,
+                    key = { it.id },
+                    contentType = { "channel-grid-card" }
+                ) { channel ->
+                    ChannelCard(
+                        channel = channel,
+                        isFavorite = state.favoriteIds.contains(channel.id),
+                        onClick = { onChannelClick(channel.id) },
+                        onToggleFavorite = { viewModel.toggleFavorite(channel) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryFilterRow(
+    state: LiveTvUiState,
+    onSelect: (ChannelCategory?) -> Unit
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        item(key = "all") { FilterPill("All", state.selectedCategory == null) { onSelect(null) } }
+        items(
+            items = ChannelCategory.orderedCategories,
+            key = { it.name },
+            contentType = { "category-pill" }
+        ) { category ->
+            if (state.categorized[category]?.isNotEmpty() == true) {
+                FilterPill(
+                    label = category.displayName,
+                    selected = state.selectedCategory == category,
+                    onClick = { onSelect(category) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
+        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f))
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), RoundedCornerShape(50))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 15.dp, vertical = 10.dp)
+    )
+}
+
+@Composable
+private fun SortMenu(selected: ChannelSort, onSelected: (ChannelSort) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f))
+                .clickable { expanded = true }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
+            Text(selected.label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 6.dp))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            ChannelSort.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label) },
+                    onClick = { onSelected(option); expanded = false },
+                    trailingIcon = if (option == selected) {
+                        { Text("✓", color = MaterialTheme.colorScheme.primary) }
+                    } else null
+                )
+            }
+        }
+    }
+}
+
+private fun visibleChannels(state: LiveTvUiState): List<Channel> {
+    val base = if (state.selectedCategory == null) {
+        ChannelCategory.orderedCategories.flatMap { state.categorized[it].orEmpty() }
+    } else {
+        state.categorized[state.selectedCategory].orEmpty()
+    }
+    return when (state.sort) {
+        ChannelSort.SMART -> base
+        ChannelSort.ALPHABETICAL -> base.sortedBy { it.name.lowercase() }
+        ChannelSort.PROVIDER -> base.sortedWith(compareBy({ it.provider.ifBlank { "Other" }.lowercase() }, { it.name.lowercase() }))
+        ChannelSort.COUNTRY -> base.sortedWith(compareBy({ it.country.ifBlank { "Global" }.lowercase() }, { it.name.lowercase() }))
+    }
+}
+
+@Composable
+private fun EmptyChannels() {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(top = 70.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(Icons.Filled.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
+        Text("No channels yet", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 14.dp))
+        Text("Add licensed streams to channels.json", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
     }
 }

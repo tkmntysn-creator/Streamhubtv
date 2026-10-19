@@ -1,14 +1,14 @@
 package com.streamhub.tv.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LiveTv
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.LiveTv
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /** Every navigable screen in the app. */
@@ -41,8 +41,8 @@ data class TopLevelDestination(
 // Favorites no longer has its own tab - it now lives on the Home screen as a
 // "My List" row (Netflix-style), reachable via the heart icon on any channel card.
 val topLevelDestinations = listOf(
-    TopLevelDestination(Destination.Home, "Home", Icons.Filled.Home, Icons.Outlined.Home),
-    TopLevelDestination(Destination.LiveTv, "Channels", Icons.Filled.LiveTv, Icons.Outlined.LiveTv),
+    TopLevelDestination(Destination.Home, "Explore", Icons.Filled.Explore, Icons.Outlined.Explore),
+    TopLevelDestination(Destination.LiveTv, "Live", Icons.Filled.PlayCircle, Icons.Outlined.PlayCircle),
     TopLevelDestination(Destination.Search, "Search", Icons.Filled.Search, Icons.Outlined.Search),
-    TopLevelDestination(Destination.Settings, "Settings", Icons.Filled.Settings, Icons.Outlined.Settings),
+    TopLevelDestination(Destination.Settings, "Settings", Icons.Filled.Tune, Icons.Outlined.Tune),
 )
