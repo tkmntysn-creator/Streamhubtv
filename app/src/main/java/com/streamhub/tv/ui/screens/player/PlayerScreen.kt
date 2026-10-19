@@ -331,7 +331,7 @@ fun PlayerScreen(
                             Icon(Icons.Filled.PictureInPicture, contentDescription = "Picture in Picture", tint = Color.White)
                         }
                     }
-                )
+                }
             }
         }
 
