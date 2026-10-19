@@ -20,9 +20,6 @@ object PrefKeys {
     val AUTO_UPDATE = booleanPreferencesKey("auto_update")
     val APP_LANGUAGE = stringPreferencesKey("app_language") // "en" | "ar" | "fr"
     val LAST_SYNC_AT = stringPreferencesKey("last_sync_at")
-    // One-time activation gate: once the user enters the correct code, this stays
-    // true forever (until "Reset Activation" is used in Settings or cache is cleared).
-    val IS_ACTIVATED = booleanPreferencesKey("is_activated")
 }
 
 enum class ThemeMode { DARK, LIGHT, SYSTEM }
@@ -48,8 +45,6 @@ class PreferencesManager(private val context: Context) {
 
     val lastSyncAt: Flow<String> = context.dataStore.data.map { it[PrefKeys.LAST_SYNC_AT] ?: "" }
 
-    val isActivated: Flow<Boolean> = context.dataStore.data.map { it[PrefKeys.IS_ACTIVATED] ?: false }
-
     suspend fun setRepoUrl(url: String) {
         context.dataStore.edit { it[PrefKeys.REPO_URL] = url }
     }
@@ -70,7 +65,4 @@ class PreferencesManager(private val context: Context) {
         context.dataStore.edit { it[PrefKeys.LAST_SYNC_AT] = iso }
     }
 
-    suspend fun setActivated(activated: Boolean) {
-        context.dataStore.edit { it[PrefKeys.IS_ACTIVATED] = activated }
-    }
 }

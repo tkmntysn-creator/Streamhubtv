@@ -1,6 +1,5 @@
 package com.streamhub.tv.data.remote
 
-import com.streamhub.tv.data.model.ActivationConfig
 import com.streamhub.tv.data.model.ChannelsResponse
 import retrofit2.Response
 import retrofit2.http.GET
@@ -15,8 +14,4 @@ import retrofit2.http.Url
 interface ChannelApiService {
     @GET
     suspend fun getChannels(@Url url: String): Response<ChannelsResponse>
-
-    /** Downloads the small activation.json file used by the one-time activation gate. */
-    @GET
-    suspend fun getActivationConfig(@Url url: String): Response<ActivationConfig>
 }

@@ -78,26 +78,9 @@ A ready-to-use example covering every category requested in the spec (Sports 1�
 
 ---
 
-## 🔐 Activation gate
+## 🚀 Startup experience
 
-The app shows a one-time activation code screen on first launch. The valid code is **not hardcoded** - it's read from a small `activation.json` file that must sit in the **same folder** as `channels.json`, e.g.:
-
-```
-https://raw.githubusercontent.com/USER/REPO/main/channels.json     <- already configured
-https://raw.githubusercontent.com/USER/REPO/main/activation.json   <- the app derives this automatically
-```
-
-`activation.json` looks like:
-
-```json
-{ "code": "1001" }
-```
-
-Once a user enters the correct code, the app remembers it locally (DataStore) and never asks again. You can force it to ask again from **Settings → Reset Activation**, or by changing the code in `activation.json` at any time (existing activated users are unaffected until they reset).
-
-A ready example is in [`sample-data/activation.json`](sample-data/activation.json).
-
-
+The app opens directly to the main TV interface. The previous first-launch activation-code gate has been removed so users can start browsing channels immediately. Repository and channel settings remain available from **Settings → Repository Configuration**.
 
 ## ▶️ Player features (Media3 ExoPlayer)
 

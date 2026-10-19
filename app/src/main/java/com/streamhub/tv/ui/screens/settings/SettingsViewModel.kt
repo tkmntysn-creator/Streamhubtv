@@ -59,8 +59,4 @@ class SettingsViewModel @Inject constructor(
     fun cacheClearedHandled() {
         _uiState.value = _uiState.value.copy(cacheCleared = false)
     }
-
-    fun resetActivation() {
-        viewModelScope.launch { settingsRepository.resetActivation() }
-    }
 }

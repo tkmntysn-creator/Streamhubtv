@@ -23,6 +23,4 @@ class SettingsRepository @Inject constructor(
     suspend fun setLanguage(lang: String) = preferencesManager.setLanguage(lang)
 
     suspend fun clearCache() = channelRepository.clearCache()
-
-    suspend fun resetActivation() = preferencesManager.setActivated(false)
 }

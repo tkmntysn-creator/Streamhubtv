@@ -1,10 +1,18 @@
 package com.streamhub.tv.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
@@ -12,18 +20,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.streamhub.tv.ui.theme.AppRadii
 
-/**
- * Chooses the right navigation chrome for the current form factor:
- *  - Phone (compact width)         -> Bottom Navigation Bar
- *  - Tablet (medium/expanded width) -> Side Navigation Rail
- *  - Android TV / TV Box            -> Side Navigation Rail (focusable, D-pad friendly)
- */
+/** Adaptive iOS-inspired navigation: floating Liquid Glass on phones, rail on large screens/TV. */
 @Composable
 fun AdaptiveNavScaffold(
     navController: NavHostController,
@@ -46,12 +55,6 @@ fun AdaptiveNavScaffold(
         }
     }
 
-    // The Player screen owns the entire screen (video should never share space with
-    // app chrome), so we skip the Scaffold/Rail wrapper completely for it. This also
-    // fixes a rotation bug: previously, rotating the phone while the player was open
-    // could flip `useRail` (since width/height swap on rotation), tearing down and
-    // re-creating the whole content subtree - which reset the player's local
-    // `isFullscreen` state back to false right after the user turned it on.
     val isPlayerRoute = currentDestination?.route == Destination.Player.route
     if (isPlayerRoute) {
         content(Modifier.fillMaxSize())
@@ -60,14 +63,18 @@ fun AdaptiveNavScaffold(
 
     if (useRail) {
         Row(modifier = Modifier.fillMaxSize()) {
-            NavigationRail {
+            NavigationRail(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+            ) {
                 topLevelDestinations.forEach { item ->
                     val selected = isSelected(item.destination)
                     NavigationRailItem(
                         selected = selected,
                         onClick = { onSelect(item.destination) },
                         icon = {
-                            androidx.compose.material3.Icon(
+                            Icon(
                                 imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
                                 contentDescription = item.label
                             )
@@ -80,26 +87,90 @@ fun AdaptiveNavScaffold(
         }
     } else {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
-                NavigationBar {
-                    topLevelDestinations.forEach { item ->
-                        val selected = isSelected(item.destination)
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { onSelect(item.destination) },
-                            icon = {
-                                androidx.compose.material3.Icon(
-                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                    contentDescription = item.label
-                                )
-                            },
-                            label = { Text(item.label) }
-                        )
-                    }
-                }
+                LiquidGlassBottomBar(
+                    onSelect = ::onSelect,
+                    isSelected = ::isSelected
+                )
             }
         ) { paddingValues ->
             content(Modifier.fillMaxSize().padding(paddingValues))
         }
     }
+}
+
+@Composable
+private fun LiquidGlassBottomBar(
+    onSelect: (Destination) -> Unit,
+    isSelected: (Destination) -> Boolean
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(AppRadii.GlassBar)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f)
+                        )
+                    )
+                )
+                .border(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.08f))
+                    ),
+                    shape = AppRadii.GlassBar
+                )
+                .padding(horizontal = 8.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            topLevelDestinations.forEach { item ->
+                GlassNavigationItem(
+                    item = item,
+                    selected = isSelected(item.destination),
+                    onClick = { onSelect(item.destination) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassNavigationItem(
+    item: TopLevelDestination,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    androidx.compose.material3.NavigationBarItem(
+        selected = selected,
+        onClick = onClick,
+        icon = {
+            Icon(
+                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                contentDescription = item.label
+            )
+        },
+        label = { Text(item.label) },
+        alwaysShowLabel = true,
+        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+            indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.94f),
+            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    )
 }

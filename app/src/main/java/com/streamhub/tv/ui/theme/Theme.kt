@@ -19,6 +19,8 @@ private val DarkColors = darkColorScheme(
     surface = SurfaceDark,
     onSurface = OnSurfaceDark,
     surfaceVariant = SurfaceDarkElevated,
+    onSurfaceVariant = Color(0xFFB8C0D0),
+    onPrimaryContainer = Color.White,
     error = ErrorRed
 )
 
@@ -33,6 +35,8 @@ private val LightColors = lightColorScheme(
     surface = SurfaceLight,
     onSurface = OnSurfaceLight,
     surfaceVariant = SurfaceLightElevated,
+    onSurfaceVariant = Color(0xFF5F6878),
+    onPrimaryContainer = Color.White,
     error = ErrorRed
 )
 

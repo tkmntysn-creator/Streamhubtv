@@ -63,11 +63,6 @@ fun SettingsScreen(
             subtitle = "Remove cached channel list and thumbnails",
             onClick = viewModel::clearCache
         )
-        SettingsRow(
-            title = "Reset Activation",
-            subtitle = "Require the activation code again next time the app opens",
-            onClick = viewModel::resetActivation
-        )
 
         Divider()
         SettingsSectionTitle("Language")
