@@ -15,6 +15,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -154,7 +156,7 @@ private fun GlassNavigationItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    androidx.compose.material3.NavigationBarItem(
+    NavigationBarItem(
         selected = selected,
         onClick = onClick,
         icon = {
@@ -165,7 +167,7 @@ private fun GlassNavigationItem(
         },
         label = { Text(item.label) },
         alwaysShowLabel = true,
-        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+        colors = NavigationBarItemDefaults.colors(
             selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
             selectedTextColor = MaterialTheme.colorScheme.onSurface,
             indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.94f),
