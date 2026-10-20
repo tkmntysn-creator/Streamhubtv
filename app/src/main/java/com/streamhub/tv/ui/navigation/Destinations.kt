@@ -1,5 +1,6 @@
 package com.streamhub.tv.ui.navigation
 
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.PlayCircle
@@ -25,7 +26,7 @@ sealed class Destination(val route: String) {
     }
 
     data object CategoryDetail : Destination("category/{categoryName}") {
-        fun createRoute(categoryName: String) = "category/$categoryName"
+        fun createRoute(categoryName: String) = "category/${Uri.encode(categoryName)}"
     }
 }
 

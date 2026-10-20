@@ -37,9 +37,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.streamhub.tv.R
 import com.streamhub.tv.data.model.Channel
-import com.streamhub.tv.data.model.ChannelCategory
 import com.streamhub.tv.ui.components.ChannelCard
 import com.streamhub.tv.ui.components.FullScreenError
 import com.streamhub.tv.ui.components.FullScreenLoading
@@ -59,7 +60,7 @@ fun LiveTvScreen(
             .padding(horizontal = 20.dp)
     ) {
         Text(
-            text = "Channels",
+            text = stringResource(R.string.channels_title),
             style = MaterialTheme.typography.displaySmall,
             modifier = Modifier.padding(top = 20.dp)
         )
@@ -69,7 +70,7 @@ fun LiveTvScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${state.channels.size} live destinations",
+                text = stringResource(R.string.live_destinations, state.channels.size),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -113,22 +114,20 @@ fun LiveTvScreen(
 @Composable
 private fun CategoryFilterRow(
     state: LiveTvUiState,
-    onSelect: (ChannelCategory?) -> Unit
+    onSelect: (String?) -> Unit
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        item(key = "all") { FilterPill("All", state.selectedCategory == null) { onSelect(null) } }
+        item(key = "all") { FilterPill(stringResource(R.string.all), state.selectedCategory == null) { onSelect(null) } }
         items(
-            items = ChannelCategory.orderedCategories,
-            key = { it.name },
+            items = state.categoryNames,
+            key = { "category-$it" },
             contentType = { "category-pill" }
         ) { category ->
-            if (state.categorized[category]?.isNotEmpty() == true) {
-                FilterPill(
-                    label = category.displayName,
-                    selected = state.selectedCategory == category,
-                    onClick = { onSelect(category) }
-                )
-            }
+            FilterPill(
+                label = category,
+                selected = state.selectedCategory == category,
+                onClick = { onSelect(category) }
+            )
         }
     }
 }
@@ -180,7 +179,7 @@ private fun SortMenu(selected: ChannelSort, onSelected: (ChannelSort) -> Unit) {
 
 private fun visibleChannels(state: LiveTvUiState): List<Channel> {
     val base = if (state.selectedCategory == null) {
-        ChannelCategory.orderedCategories.flatMap { state.categorized[it].orEmpty() }
+        state.categoryNames.flatMap { state.categorized[it].orEmpty() }
     } else {
         state.categorized[state.selectedCategory].orEmpty()
     }
@@ -199,7 +198,7 @@ private fun EmptyChannels() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(Icons.Filled.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
-        Text("No channels yet", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 14.dp))
-        Text("Add licensed streams to channels.json", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+        Text(stringResource(R.string.no_channels), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 14.dp))
+        Text(stringResource(R.string.add_streams), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
     }
 }

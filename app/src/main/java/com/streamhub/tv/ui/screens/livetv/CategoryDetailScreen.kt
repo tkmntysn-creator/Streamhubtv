@@ -23,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.streamhub.tv.data.model.ChannelCategory
 import com.streamhub.tv.ui.components.ChannelCard
 import com.streamhub.tv.ui.components.FullScreenLoading
 
@@ -36,15 +35,13 @@ fun CategoryDetailScreen(
     viewModel: LiveTvViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    val category = ChannelCategory.from(categoryName)
-
     LaunchedEffect(Unit) {
         if (state.categorized.isEmpty()) viewModel.load()
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(category.displayName, style = MaterialTheme.typography.headlineMedium) },
+            title = { Text(categoryName, style = MaterialTheme.typography.headlineMedium) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -55,7 +52,7 @@ fun CategoryDetailScreen(
         if (state.isLoading && state.categorized.isEmpty()) {
             FullScreenLoading()
         } else {
-            val channels = state.categorized[category].orEmpty()
+            val channels = state.categorized[categoryName].orEmpty()
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 150.dp),
                 contentPadding = PaddingValues(16.dp),

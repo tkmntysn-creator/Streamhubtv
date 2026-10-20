@@ -1,5 +1,7 @@
 package com.streamhub.tv.ui.screens.settings
 
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamhub.tv.data.local.ThemeMode
@@ -47,7 +49,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     fun setAutoUpdate(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAutoUpdate(enabled) }
-    fun setLanguage(lang: String) = viewModelScope.launch { settingsRepository.setLanguage(lang) }
+    fun setLanguage(lang: String) = viewModelScope.launch {
+        settingsRepository.setLanguage(lang)
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(lang))
+    }
 
     fun clearCache() {
         viewModelScope.launch {

@@ -5,19 +5,12 @@ import android.content.pm.ActivityInfo
 import android.util.Rational
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,31 +19,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PictureInPicture
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Replay10
-import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LiveTv
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -68,29 +50,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.media3.ui.PlayerView
 import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import kotlinx.coroutines.delay
+import com.streamhub.tv.R
 
 /**
- * Full-featured live TV player screen built on Media3 ExoPlayer.
- *
- * Design goals (inspired by minimalist players like "Just Player"):
- *  - Very few visible buttons at any time - a clean, uncluttered look
- *  - Double-tap left/right to seek -10s / +10s (works when the stream exposes a
- *    seekable/DVR window; harmless no-op on pure live edge otherwise)
- *  - Long-press anywhere to lock the screen: hides every control and gesture except
- *    a small lock icon used to unlock
- *  - Tap once to show/hide the (few) controls; they also auto-hide after 5 seconds
- *  - Vertical swipe: right half = volume, left half = brightness
- *  - Multi-server (⚙) picker, fullscreen, Picture-in-Picture, auto-reconnect
+ * Native playback surface based on Media3's production PlayerView controls.
+ * The interaction model follows Just (Video) Player's public-domain upstream:
+ * native transport controls, fit/crop sizing, PiP, track actions and fast channel access.
+ * The stream and channel business logic remains owned by StreamHub's ViewModel.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,42 +78,13 @@ fun PlayerScreen(
     val context = LocalContext.current
     val activity = context as? ComponentActivity
     val systemUiController = rememberSystemUiController()
-
     var isFullscreen by remember { mutableStateOf(false) }
-    var volumeLevel by remember { mutableStateOf(0.5f) }
-    var brightnessLevel by remember { mutableStateOf(0.5f) }
-    var controlsVisible by remember { mutableStateOf(true) }
-    var isLocked by remember { mutableStateOf(false) }
-    var showVolumeIndicator by remember { mutableStateOf(false) }
-    var showBrightnessIndicator by remember { mutableStateOf(false) }
-    // null = hidden, true = forward (+10s), false = backward (-10s)
-    var seekFeedback by remember { mutableStateOf<Boolean?>(null) }
-    var showSourceSheet by remember { mutableStateOf(false) }
     var showChannelSheet by remember { mutableStateOf(false) }
-    val sourceSheetState = rememberModalBottomSheetState()
+    var showSourceSheet by remember { mutableStateOf(false) }
     val channelSheetState = rememberModalBottomSheetState()
+    val sourceSheetState = rememberModalBottomSheetState()
 
     LaunchedEffect(channelId) { viewModel.loadChannel(channelId) }
-
-    LaunchedEffect(controlsVisible, state.isBuffering, state.errorMessage) {
-        if (controlsVisible && !state.isBuffering && state.errorMessage == null) {
-            delay(4000)
-            controlsVisible = false
-        }
-    }
-    LaunchedEffect(showVolumeIndicator) {
-        if (showVolumeIndicator) { delay(1200); showVolumeIndicator = false }
-    }
-    LaunchedEffect(showBrightnessIndicator) {
-        if (showBrightnessIndicator) { delay(1200); showBrightnessIndicator = false }
-    }
-    LaunchedEffect(seekFeedback) {
-        if (seekFeedback != null) { delay(600); seekFeedback = null }
-    }
-    // Locking hides the controls immediately, matching "Just Player"'s touch lock.
-    LaunchedEffect(isLocked) {
-        if (isLocked) controlsVisible = false
-    }
 
     DisposableEffect(isFullscreen) {
         systemUiController.isSystemBarsVisible = !isFullscreen
@@ -155,299 +101,134 @@ fun PlayerScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
-            factory = {
-                PlayerView(it).apply {
+            factory = { viewContext ->
+                PlayerView(viewContext).apply {
                     player = viewModel.exoPlayer
-                    useController = false
+                    useController = true
+                    controllerShowTimeoutMs = 4_000
+                    controllerHideOnTouch = true
+                    controllerAutoShow = true
+                    setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                    setShowNextButton(false)
+                    setShowPreviousButton(false)
+                    setShowFastForwardButton(true)
+                    setShowRewindButton(true)
                     resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                    setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
                 }
             },
+            update = { playerView ->
+                playerView.player = viewModel.exoPlayer
+                playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+            },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Gesture layer - disabled entirely while locked, except the small unlock icon below.
-        if (!isLocked) {
-            Row(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onTap = { controlsVisible = !controlsVisible },
-                                onDoubleTap = {
-                                    viewModel.exoPlayer.seekTo(
-                                        (viewModel.exoPlayer.currentPosition - 10_000).coerceAtLeast(0)
-                                    )
-                                    seekFeedback = false
-                                },
-                                onLongPress = { isLocked = true }
-                            )
-                        }
-                        .pointerInput(Unit) {
-                            detectVerticalDragGestures(
-                                onVerticalDrag = { _, dragAmount ->
-                                    brightnessLevel = (brightnessLevel - dragAmount / 1000f).coerceIn(0f, 1f)
-                                    showBrightnessIndicator = true
-                                    activity?.window?.let { window ->
-                                        window.attributes = window.attributes.apply {
-                                            screenBrightness = brightnessLevel
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                )
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onTap = { controlsVisible = !controlsVisible },
-                                onDoubleTap = {
-                                    viewModel.exoPlayer.seekTo(viewModel.exoPlayer.currentPosition + 10_000)
-                                    seekFeedback = true
-                                },
-                                onLongPress = { isLocked = true }
-                            )
-                        }
-                        .pointerInput(Unit) {
-                            detectVerticalDragGestures(
-                                onVerticalDrag = { _, dragAmount ->
-                                    volumeLevel = (volumeLevel - dragAmount / 1000f).coerceIn(0f, 1f)
-                                    showVolumeIndicator = true
-                                    viewModel.exoPlayer.volume = volumeLevel
-                                }
-                            )
-                        }
-                )
-            }
-        }
-
-        if (showVolumeIndicator) {
-            GestureIndicator(Icons.Filled.VolumeUp, volumeLevel, Modifier.align(Alignment.Center))
-        }
-        if (showBrightnessIndicator) {
-            GestureIndicator(Icons.Filled.BrightnessMedium, brightnessLevel, Modifier.align(Alignment.Center))
-        }
-        seekFeedback?.let { forward ->
-            Box(
-                modifier = Modifier
-                    .align(if (forward) Alignment.CenterEnd else Alignment.CenterStart)
-                    .padding(horizontal = 48.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.55f))
-                    .padding(16.dp)
-            ) {
-                Icon(
-                    imageVector = if (forward) Icons.Filled.Forward10 else Icons.Filled.Replay10,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-        }
-
-        // Lock icon - the only thing shown while locked
-        if (isLocked) {
-            IconButton(
-                onClick = { isLocked = false },
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(20.dp)
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.15f))
-            ) {
-                Icon(Icons.Filled.Lock, contentDescription = "Unlock screen", tint = Color.White)
-            }
-        }
-
-        val showChrome = controlsVisible && !isLocked
-
-        AnimatedVisibility(
-            visible = showChrome,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.TopStart)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.78f), Color.Transparent)))
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.82f), Color.Transparent)))
-                    .padding(horizontal = 14.dp, vertical = 16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RoundIconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = Color.White)
+                }
+                state.channel?.let { channel ->
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(Color.Black.copy(alpha = 0.45f))
+                            .padding(horizontal = 9.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (channel.logo.isNotBlank()) {
+                            AsyncImage(channel.logo, null, Modifier.size(30.dp).clip(CircleShape))
                         }
-                        state.channel?.let { channel ->
-                            Row(
-                                modifier = Modifier
-                                    .padding(start = 8.dp)
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(Color.White.copy(alpha = 0.12f))
-                                    .border(1.dp, Color.White.copy(alpha = 0.16f), RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 10.dp, vertical = 7.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (channel.logo.isNotBlank()) {
-                                    AsyncImage(
-                                        model = channel.logo,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(30.dp).clip(CircleShape)
-                                    )
-                                }
-                                Column(modifier = Modifier.padding(start = 9.dp)) {
-                                    Text(channel.name, color = Color.White, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Filled.LiveTv, contentDescription = null, tint = Color(0xFFFF5B62), modifier = Modifier.size(13.dp))
-                                        Text(" LIVE  ·  ${channel.category}", color = Color.White.copy(alpha = 0.72f), style = MaterialTheme.typography.labelMedium)
-                                    }
-                                }
+                        Column(modifier = Modifier.padding(start = 9.dp)) {
+                            Text(channel.name, color = Color.White, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.LiveTv, null, tint = Color(0xFFFF5B62), modifier = Modifier.size(13.dp))
+                                Text(" ${stringResource(R.string.live)} · ${channel.category}", color = Color.White.copy(alpha = 0.78f), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        RoundIconButton(onClick = { showChannelSheet = true }) {
-                            Icon(Icons.Filled.List, contentDescription = "Channel guide", tint = Color.White)
-                        }
-                        RoundIconButton(onClick = {
-                            activity?.enterPictureInPictureMode(
-                                PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
-                            )
-                        }) {
-                            Icon(Icons.Filled.PictureInPicture, contentDescription = "Picture in Picture", tint = Color.White)
-                        }
-                    }
                 }
             }
-        }
-
-        AnimatedVisibility(
-            visible = showChrome,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.Center)
-        ) {
-            IconButton(
-                onClick = viewModel::togglePlayPause,
-                modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White)
-            ) {
-                Icon(
-                    imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (state.isPlaying) "Pause" else "Play",
-                    tint = Color.Black,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-        }
-
-        // Signal Glass transport dock: essential live-TV actions only.
-        AnimatedVisibility(
-            visible = showChrome,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.82f))))
-                    .padding(horizontal = 14.dp, vertical = 14.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(26.dp))
-                        .background(Color.White.copy(alpha = 0.11f))
-                        .border(1.dp, Color.White.copy(alpha = 0.16f), RoundedCornerShape(26.dp))
-                        .padding(horizontal = 8.dp, vertical = 7.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RoundIconButton(onClick = {
-                        val index = state.allChannelsInCategory.indexOfFirst { it.id == state.channel?.id }
-                        if (index > 0) viewModel.switchChannel(state.allChannelsInCategory[index - 1])
-                    }) {
-                        Icon(Icons.Filled.SkipPrevious, contentDescription = "Previous channel", tint = Color.White)
-                    }
-                    RoundIconButton(onClick = viewModel::toggleFavorite) {
-                        Icon(
-                            imageVector = if (state.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            contentDescription = "Toggle favorite",
-                            tint = if (state.isFavorite) MaterialTheme.colorScheme.tertiary else Color.White
-                        )
-                    }
-                    RoundIconButton(onClick = { showChannelSheet = true }) {
-                        Icon(Icons.Filled.List, contentDescription = "Channel guide", tint = Color.White)
-                    }
-                    RoundIconButton(onClick = { showSourceSheet = true }) {
-                        Icon(Icons.Filled.Tune, contentDescription = "Playback options", tint = Color.White)
-                    }
-                    RoundIconButton(onClick = { isFullscreen = !isFullscreen }) {
-                        Icon(
-                            imageVector = if (isFullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
-                            contentDescription = "Toggle fullscreen",
-                            tint = Color.White
-                        )
-                    }
-                    RoundIconButton(onClick = {
-                        val index = state.allChannelsInCategory.indexOfFirst { it.id == state.channel?.id }
-                        if (index in 0 until state.allChannelsInCategory.size - 1) {
-                            viewModel.switchChannel(state.allChannelsInCategory[index + 1])
-                        }
-                    }) {
-                        Icon(Icons.Filled.SkipNext, contentDescription = "Next channel", tint = Color.White)
-                    }
+            Row {
+                IconButton(onClick = { showChannelSheet = true }) {
+                    Icon(Icons.Filled.List, contentDescription = stringResource(R.string.live_guide), tint = Color.White)
                 }
-                Text(
-                    text = "Double-tap to seek  ·  Swipe vertically for volume / brightness",
-                    color = Color.White.copy(alpha = 0.55f),
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
-                )
+                IconButton(onClick = { showSourceSheet = true }) {
+                    Icon(Icons.Filled.Tune, contentDescription = stringResource(R.string.playback_options), tint = Color.White)
+                }
+                IconButton(onClick = {
+                    activity?.enterPictureInPictureMode(
+                        PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+                    )
+                }) {
+                    Icon(Icons.Filled.PictureInPicture, contentDescription = "Picture in Picture", tint = Color.White)
+                }
+                IconButton(onClick = { isFullscreen = !isFullscreen }) {
+                    Icon(
+                        if (isFullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
+                        contentDescription = "Fullscreen",
+                        tint = Color.White
+                    )
+                }
             }
         }
 
         if (state.isBuffering && state.errorMessage == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
+            CircularProgressIndicator(
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.Center)
+            )
         }
 
         state.errorMessage?.let { message ->
-            Box(
-                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.88f)),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.Black.copy(alpha = 0.82f))
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Playback error", color = Color.White, style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        message,
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-                    )
-                    if (state.reconnectAttempt in 1..5) {
-                        Text(
-                            "Reconnecting... (attempt ${state.reconnectAttempt}/5)",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    } else {
-                        Button(onClick = viewModel::retryNow) { Text("Retry") }
+                Text("Playback error", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                Text(message, color = Color.White.copy(alpha = 0.72f), modifier = Modifier.padding(top = 6.dp, bottom = 14.dp))
+                if (state.reconnectAttempt in 1..5) {
+                    Text("Reconnecting… ${state.reconnectAttempt}/5", color = Color.White)
+                } else {
+                    Button(onClick = viewModel::retryNow) { Text(stringResource(R.string.retry)) }
+                }
+            }
+        }
+    }
+
+    if (showChannelSheet) {
+        ModalBottomSheet(onDismissRequest = { showChannelSheet = false }, sheetState = channelSheetState) {
+            Column(modifier = Modifier.padding(bottom = 24.dp)) {
+                Text(stringResource(R.string.live_guide), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(20.dp))
+                state.allChannelsInCategory.forEach { channel ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            viewModel.switchChannel(channel)
+                            showChannelSheet = false
+                        }.padding(horizontal = 20.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (channel.logo.isNotBlank()) AsyncImage(channel.logo, null, Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)))
+                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text(channel.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                            Text(channel.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (channel.id == state.channel?.id) Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -457,115 +238,21 @@ fun PlayerScreen(
     if (showSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showSourceSheet = false }, sheetState = sourceSheetState) {
             Column(modifier = Modifier.padding(bottom = 24.dp)) {
-                Text(
-                    "Select server",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                )
+                Text(stringResource(R.string.select_server), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(20.dp))
                 state.availableSources.forEachIndexed { index, source ->
-                    val selected = index == state.selectedSourceIndex
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                viewModel.selectSource(index)
-                                showSourceSheet = false
-                            }
-                            .padding(horizontal = 20.dp, vertical = 14.dp),
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            viewModel.selectSource(index)
+                            showSourceSheet = false
+                        }.padding(horizontal = 20.dp, vertical = 14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(source.label, style = MaterialTheme.typography.titleMedium)
-                        if (selected) {
-                            Icon(Icons.Filled.Check, contentDescription = "Currently selected", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        if (index == state.selectedSourceIndex) Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
         }
-    }
-
-    if (showChannelSheet) {
-        ModalBottomSheet(onDismissRequest = { showChannelSheet = false }, sheetState = channelSheetState) {
-            Column(modifier = Modifier.padding(bottom = 24.dp)) {
-                Text(
-                    "Live guide",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-                )
-                Text(
-                    "More from ${state.channel?.category ?: "this category"}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
-                )
-                state.allChannelsInCategory.forEach { channel ->
-                    val selected = channel.id == state.channel?.id
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                viewModel.switchChannel(channel)
-                                showChannelSheet = false
-                            }
-                            .padding(horizontal = 20.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (channel.logo.isNotBlank()) {
-                            AsyncImage(
-                                model = channel.logo,
-                                contentDescription = null,
-                                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentAlignment = Alignment.Center
-                            ) { Icon(Icons.Filled.LiveTv, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
-                        }
-                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(channel.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                            Text(channel.country.ifBlank { channel.category }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        if (selected) {
-                            Icon(Icons.Filled.Check, contentDescription = "Currently playing", tint = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RoundIconButton(onClick: () -> Unit, content: @Composable () -> Unit) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.15f))
-    ) {
-        content()
-    }
-}
-
-@Composable
-private fun GestureIndicator(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    level: Float,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.large)
-            .background(Color.Black.copy(alpha = 0.6f))
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-        LinearProgressIndicator(
-            progress = { level },
-            modifier = Modifier.padding(top = 8.dp).size(width = 80.dp, height = 4.dp).clip(CircleShape),
-            color = Color.White,
-            trackColor = Color.White.copy(alpha = 0.25f)
-        )
     }
 }

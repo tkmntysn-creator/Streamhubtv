@@ -37,9 +37,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.streamhub.tv.BuildConfig
+import com.streamhub.tv.R
 import com.streamhub.tv.data.local.ThemeMode
 
 @Composable
@@ -54,42 +56,42 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             .padding(horizontal = 20.dp)
     ) {
         Text(
-            text = "Settings",
+            text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.displaySmall,
             modifier = Modifier.padding(top = 20.dp, bottom = 24.dp)
         )
 
-        SettingsSection("APPEARANCE") {
+        SettingsSection(stringResource(R.string.section_appearance)) {
             SettingsCard {
                 SettingsIconRow(
                     icon = Icons.Filled.Brightness4,
-                    title = "Dark appearance",
-                    subtitle = "Deep graphite surfaces with blue signal accents",
+                    title = stringResource(R.string.dark_appearance),
+                    subtitle = stringResource(R.string.dark_appearance_subtitle),
                     selected = state.themeMode == ThemeMode.DARK
                 ) { viewModel.setThemeMode(ThemeMode.DARK) }
                 SettingsDivider()
                 SettingsIconRow(
                     icon = Icons.Filled.Brightness7,
-                    title = "Light appearance",
-                    subtitle = "A brighter broadcast studio look",
+                    title = stringResource(R.string.light_appearance),
+                    subtitle = stringResource(R.string.light_appearance_subtitle),
                     selected = state.themeMode == ThemeMode.LIGHT
                 ) { viewModel.setThemeMode(ThemeMode.LIGHT) }
                 SettingsDivider()
                 SettingsIconRow(
                     icon = Icons.Filled.BrightnessAuto,
-                    title = "System appearance",
-                    subtitle = "Follow the device setting",
+                    title = stringResource(R.string.system_appearance),
+                    subtitle = stringResource(R.string.system_appearance_subtitle),
                     selected = state.themeMode == ThemeMode.SYSTEM
                 ) { viewModel.setThemeMode(ThemeMode.SYSTEM) }
             }
         }
 
-        SettingsSection("CHANNELS") {
+        SettingsSection(stringResource(R.string.section_channels)) {
             SettingsCard {
                 SettingsToggleRow(
                     icon = Icons.Filled.Refresh,
-                    title = "Automatic updates",
-                    subtitle = "Refresh the live catalogue when you ask for it",
+                    title = stringResource(R.string.automatic_updates),
+                    subtitle = stringResource(R.string.automatic_updates_subtitle),
                     checked = state.autoUpdate,
                     onCheckedChange = viewModel::setAutoUpdate
                 )
@@ -97,39 +99,39 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     SettingsDivider()
                     SettingsInfoRow(
                         icon = Icons.Filled.Shield,
-                        title = "Last catalogue sync",
+                        title = stringResource(R.string.last_catalogue_sync),
                         value = state.lastSyncAt
                     )
                 }
             }
         }
 
-        SettingsSection("STORAGE") {
+        SettingsSection(stringResource(R.string.section_storage)) {
             SettingsCard {
                 SettingsActionRow(
                     icon = Icons.Filled.Delete,
-                    title = "Clear local cache",
-                    subtitle = "Remove saved channels and thumbnails",
+                    title = stringResource(R.string.clear_local_cache),
+                    subtitle = stringResource(R.string.clear_local_cache_subtitle),
                     onClick = viewModel::clearCache
                 )
             }
         }
 
-        SettingsSection("LANGUAGE") {
+        SettingsSection(stringResource(R.string.section_language)) {
             SettingsCard {
-                LanguageChoice("English", "en", state.language, Icons.Filled.Language) { viewModel.setLanguage("en") }
+                LanguageChoice(stringResource(R.string.english), "en", state.language, Icons.Filled.Language) { viewModel.setLanguage("en") }
                 SettingsDivider()
-                LanguageChoice("العربية", "ar", state.language, Icons.Filled.Language) { viewModel.setLanguage("ar") }
+                LanguageChoice(stringResource(R.string.arabic), "ar", state.language, Icons.Filled.Language) { viewModel.setLanguage("ar") }
                 SettingsDivider()
-                LanguageChoice("Français", "fr", state.language, Icons.Filled.Language) { viewModel.setLanguage("fr") }
+                LanguageChoice(stringResource(R.string.french), "fr", state.language, Icons.Filled.Language) { viewModel.setLanguage("fr") }
             }
         }
 
-        SettingsSection("ABOUT") {
+        SettingsSection(stringResource(R.string.section_about)) {
             SettingsCard {
-                SettingsInfoRow(Icons.Filled.Info, "Version", BuildConfig.VERSION_NAME)
+                SettingsInfoRow(Icons.Filled.Info, stringResource(R.string.version), BuildConfig.VERSION_NAME)
                 SettingsDivider()
-                SettingsInfoRow(Icons.Filled.Shield, "Privacy", "Favorites and history stay on this device")
+                SettingsInfoRow(Icons.Filled.Shield, stringResource(R.string.privacy), stringResource(R.string.privacy_value))
             }
         }
         Text(

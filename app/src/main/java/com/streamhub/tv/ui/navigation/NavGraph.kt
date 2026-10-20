@@ -1,5 +1,6 @@
 package com.streamhub.tv.ui.navigation
 
+import android.net.Uri
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -112,7 +113,7 @@ fun StreamHubNavHost(
             route = Destination.CategoryDetail.route,
             arguments = listOf(navArgument("categoryName") { defaultValue = "" })
         ) { backStackEntry ->
-            val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
+            val categoryName = Uri.decode(backStackEntry.arguments?.getString("categoryName") ?: "")
             CategoryDetailScreen(
                 categoryName = categoryName,
                 onChannelClick = { channelId ->

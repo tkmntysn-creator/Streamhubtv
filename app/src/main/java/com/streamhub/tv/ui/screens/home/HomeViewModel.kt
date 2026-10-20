@@ -3,7 +3,6 @@ package com.streamhub.tv.ui.screens.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamhub.tv.data.model.Channel
-import com.streamhub.tv.data.model.ChannelCategory
 import com.streamhub.tv.data.repository.ChannelRepository
 import com.streamhub.tv.data.repository.FavoritesRepository
 import com.streamhub.tv.data.repository.WatchHistoryRepository
@@ -21,7 +20,8 @@ data class HomeUiState(
     val recentlyWatched: List<Channel> = emptyList(),
     val favorites: List<Channel> = emptyList(),
     val recommended: List<Channel> = emptyList(),
-    val categorized: Map<ChannelCategory, List<Channel>> = emptyMap(),
+    val categorized: Map<String, List<Channel>> = emptyMap(),
+    val categoryNames: List<String> = emptyList(),
     val favoriteIds: Set<String> = emptySet()
 )
 
@@ -55,15 +55,18 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun applyChannels(channels: List<Channel>) {
-        val categorized = channels.groupBy { ChannelCategory.from(it.category) }
+        val categoryNames = channels
+            .map { it.category.trim() }
+            .filter { it.isNotBlank() }
+            .distinctBy { it.lowercase() }
+        val categorized = channels.groupBy { it.category.trim().ifBlank { "Other" } }
         _uiState.value = _uiState.value.copy(
             isLoading = false,
             errorMessage = null,
-            // Stable ordering prevents the spotlight from changing and avoids
-            // rebuilding duplicate recommendation rows on every refresh.
             featured = channels.take(1),
             recommended = emptyList(),
-            categorized = categorized
+            categorized = categorized,
+            categoryNames = categoryNames
         )
         observeRecentlyWatched(channels)
     }
@@ -72,8 +75,9 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             watchHistoryRepository.observeRecentlyWatched().collect { history ->
                 val ids = history.map { it.channelId }.toSet()
-                val recent = allChannels.filter { it.id in ids }
-                _uiState.value = _uiState.value.copy(recentlyWatched = recent)
+                _uiState.value = _uiState.value.copy(
+                    recentlyWatched = allChannels.filter { it.id in ids }
+                )
             }
         }
     }
@@ -86,16 +90,17 @@ class HomeViewModel @Inject constructor(
         }
         viewModelScope.launch {
             favoritesRepository.observeFavorites().collect { favs ->
-                val favChannels = favs.map {
-                    Channel(
-                        id = it.channelId,
-                        name = it.name,
-                        logo = it.logo,
-                        category = it.category,
-                        streamUrl = it.streamUrl
-                    )
-                }
-                _uiState.value = _uiState.value.copy(favorites = favChannels)
+                _uiState.value = _uiState.value.copy(
+                    favorites = favs.map {
+                        Channel(
+                            id = it.channelId,
+                            name = it.name,
+                            logo = it.logo,
+                            category = it.category,
+                            streamUrl = it.streamUrl
+                        )
+                    }
+                )
             }
         }
     }

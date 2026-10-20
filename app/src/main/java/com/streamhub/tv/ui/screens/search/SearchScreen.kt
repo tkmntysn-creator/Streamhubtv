@@ -26,9 +26,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.streamhub.tv.ui.components.ChannelCard
+import com.streamhub.tv.R
 
 @Composable
 fun SearchScreen(
@@ -44,7 +46,7 @@ fun SearchScreen(
             .padding(horizontal = 20.dp)
     ) {
         Text(
-            text = "Search",
+            text = stringResource(R.string.search_title),
             style = MaterialTheme.typography.displaySmall,
             modifier = Modifier.padding(top = 20.dp, bottom = 18.dp)
         )
@@ -52,7 +54,7 @@ fun SearchScreen(
             value = state.query,
             onValueChange = viewModel::onQueryChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Channels, providers, languages") },
+            placeholder = { Text(stringResource(R.string.search_placeholder)) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             trailingIcon = { Icon(Icons.Filled.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             singleLine = true,
@@ -67,12 +69,12 @@ fun SearchScreen(
 
         when {
             state.query.isBlank() -> SearchEmptyState(
-                title = "Find your next live moment",
-                subtitle = "Search by channel, category, country, or language."
+                title = stringResource(R.string.search_empty_title),
+                subtitle = stringResource(R.string.search_empty_subtitle)
             )
             state.results.isEmpty() -> SearchEmptyState(
-                title = "No channels found",
-                subtitle = "Try a different name, provider, or category."
+                title = stringResource(R.string.search_no_results),
+                subtitle = stringResource(R.string.search_no_results_subtitle)
             )
             else -> LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 148.dp),

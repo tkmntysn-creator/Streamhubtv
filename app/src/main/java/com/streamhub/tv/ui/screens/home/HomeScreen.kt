@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.streamhub.tv.data.model.Channel
-import com.streamhub.tv.data.model.ChannelCategory
 import com.streamhub.tv.ui.components.CategoryRow
 import com.streamhub.tv.ui.components.FullScreenError
 import com.streamhub.tv.ui.components.FullScreenLoading
@@ -151,7 +150,7 @@ private fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         item(key = "category-chips", contentType = "category-chips") {
-            CategoryChipsRow(onCategoryClick = onCategoryClick)
+            CategoryChipsRow(categories = state.categoryNames, onCategoryClick = onCategoryClick)
         }
         if (heroChannel != null) {
             item(key = "spotlight", contentType = "spotlight") {
@@ -186,17 +185,17 @@ private fun HomeContent(
                 )
             }
         }
-        ChannelCategory.orderedCategories.forEach { category ->
+        state.categoryNames.forEach { category ->
             val channels = state.categorized[category].orEmpty()
             if (channels.isNotEmpty()) {
-                item(key = "category-${category.name}", contentType = "channel-row") {
+                item(key = "category-$category", contentType = "channel-row") {
                     CategoryRow(
-                        title = category.displayName,
+                        title = category,
                         channels = channels,
                         favoriteIds = state.favoriteIds,
                         onChannelClick = onChannelClick,
                         onToggleFavorite = onToggleFavorite,
-                        onSeeAll = { onCategoryClick(category.displayName) }
+                        onSeeAll = { onCategoryClick(category) }
                     )
                 }
             }
@@ -221,18 +220,18 @@ private fun HomeContent(
 }
 
 @Composable
-private fun CategoryChipsRow(onCategoryClick: (String) -> Unit) {
+private fun CategoryChipsRow(categories: List<String>, onCategoryClick: (String) -> Unit) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(9.dp)
     ) {
         items(
-            items = ChannelCategory.orderedCategories,
-            key = { it.name },
+            items = categories,
+            key = { "chip-$it" },
             contentType = { "category-chip" }
         ) { category ->
             Text(
-                text = category.displayName,
+                text = category,
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -243,7 +242,7 @@ private fun CategoryChipsRow(onCategoryClick: (String) -> Unit) {
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
                         RoundedCornerShape(50)
                     )
-                    .clickable { onCategoryClick(category.displayName) }
+                    .clickable { onCategoryClick(category) }
                     .padding(horizontal = 16.dp, vertical = 10.dp)
             )
         }

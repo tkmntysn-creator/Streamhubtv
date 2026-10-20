@@ -3,7 +3,6 @@ package com.streamhub.tv.ui.screens.livetv
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamhub.tv.data.model.Channel
-import com.streamhub.tv.data.model.ChannelCategory
 import com.streamhub.tv.data.repository.ChannelRepository
 import com.streamhub.tv.data.repository.FavoritesRepository
 import com.streamhub.tv.util.Resource
@@ -24,8 +23,9 @@ data class LiveTvUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val channels: List<Channel> = emptyList(),
-    val categorized: Map<ChannelCategory, List<Channel>> = emptyMap(),
-    val selectedCategory: ChannelCategory? = null,
+    val categorized: Map<String, List<Channel>> = emptyMap(),
+    val categoryNames: List<String> = emptyList(),
+    val selectedCategory: String? = null,
     val sort: ChannelSort = ChannelSort.SMART,
     val favoriteIds: Set<String> = emptySet()
 )
@@ -52,11 +52,19 @@ class LiveTvViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             when (val result = channelRepository.fetchChannels(forceRefresh)) {
-                is Resource.Success -> _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    channels = result.data,
-                    categorized = result.data.groupBy { ChannelCategory.from(it.category) }
-                )
+                is Resource.Success -> {
+                    val categories = result.data
+                        .map { it.category.trim() }
+                        .filter { it.isNotBlank() }
+                        .distinctBy { it.lowercase() }
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        channels = result.data,
+                        categorized = result.data.groupBy { it.category.trim().ifBlank { "Other" } },
+                        categoryNames = categories,
+                        selectedCategory = _uiState.value.selectedCategory?.takeIf { it in categories }
+                    )
+                }
                 is Resource.Error -> _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = result.message
@@ -66,7 +74,7 @@ class LiveTvViewModel @Inject constructor(
         }
     }
 
-    fun selectCategory(category: ChannelCategory?) {
+    fun selectCategory(category: String?) {
         _uiState.value = _uiState.value.copy(selectedCategory = category)
     }
 

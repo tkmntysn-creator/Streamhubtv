@@ -37,6 +37,8 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.streamhub.tv.ui.theme.AppRadii
+import com.streamhub.tv.R
+import androidx.compose.ui.res.stringResource
 
 /** Adaptive iOS-inspired navigation: floating Liquid Glass on phones, rail on large screens/TV. */
 @Composable
@@ -76,16 +78,17 @@ fun AdaptiveNavScaffold(
             ) {
                 topLevelDestinations.forEach { item ->
                     val selected = isSelected(item.destination)
+                    val label = localizedLabel(item.destination)
                     NavigationRailItem(
                         selected = selected,
                         onClick = { onSelect(item.destination) },
                         icon = {
                             Icon(
                                 imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = item.label
+                                contentDescription = label
                             )
                         },
-                        label = { Text(item.label) }
+                        label = { Text(label) }
                     )
                 }
             }
@@ -160,6 +163,7 @@ private fun GlassNavigationItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val label = localizedLabel(item.destination)
     val indicatorColor by animateColorAsState(
         targetValue = if (selected) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.94f)
@@ -188,13 +192,22 @@ private fun GlassNavigationItem(
     ) {
         Icon(
             imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-            contentDescription = item.label,
+            contentDescription = label,
             tint = contentColor
         )
         Text(
-            text = item.label,
+            text = label,
             color = contentColor,
             style = MaterialTheme.typography.labelMedium
         )
     }
+}
+
+@Composable
+private fun localizedLabel(destination: Destination): String = when (destination) {
+    Destination.Home -> stringResource(R.string.tab_home)
+    Destination.LiveTv -> stringResource(R.string.tab_live_tv)
+    Destination.Search -> stringResource(R.string.tab_search)
+    Destination.Settings -> stringResource(R.string.tab_settings)
+    else -> ""
 }
