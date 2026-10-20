@@ -10,6 +10,7 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.streamhub.tv.data.model.Channel
@@ -58,8 +59,12 @@ class PlayerViewModel @Inject constructor(
 
     private val okHttpClient = OkHttpClient.Builder().build()
 
+    val trackSelector: DefaultTrackSelector by lazy { DefaultTrackSelector(application) }
+
     val exoPlayer: ExoPlayer by lazy {
-        ExoPlayer.Builder(application).build().apply {
+        ExoPlayer.Builder(application)
+            .setTrackSelector(trackSelector)
+            .build().apply {
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     _uiState.value = _uiState.value.copy(

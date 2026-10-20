@@ -89,7 +89,7 @@ private fun HomeTopBar() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .padding(horizontal = 18.dp, vertical = 5.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -99,12 +99,12 @@ private fun HomeTopBar() {
             Column {
                 Text(
                     text = "Explore",
-                    style = MaterialTheme.typography.displaySmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = "Live channels, picked for you",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp)
                 )
@@ -246,12 +246,12 @@ private fun SpotlightHero(
     onWatch: () -> Unit,
     onToggleFavorite: () -> Unit
 ) {
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(22.dp)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .height(292.dp)
+            .padding(horizontal = 16.dp)
+            .height(224.dp)
             .clip(shape)
             .background(
                 Brush.linearGradient(
@@ -275,8 +275,8 @@ private fun SpotlightHero(
                 contentDescription = channel.name,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .width(190.dp)
-                    .height(292.dp),
+                    .width(142.dp)
+                    .height(224.dp),
                 contentScale = ContentScale.Crop
             )
             Box(
@@ -292,8 +292,8 @@ private fun SpotlightHero(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(20.dp)
-                .width(250.dp)
+                .padding(16.dp)
+                .width(220.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -303,7 +303,7 @@ private fun SpotlightHero(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(Color(0xFFE5484D))
-                        .padding(horizontal = 9.dp, vertical = 5.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text("LIVE", color = Color.White, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                 }
@@ -317,18 +317,18 @@ private fun SpotlightHero(
             Text(
                 text = channel.name,
                 color = Color.White,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 10.dp)
+                modifier = Modifier.padding(top = 6.dp)
             )
             Text(
                 text = listOfNotNull(channel.country.ifBlank { null }, channel.language.ifBlank { null })
                     .joinToString("  •  "),
                 color = Color.White.copy(alpha = 0.70f),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 5.dp, bottom = 14.dp)
+                modifier = Modifier.padding(top = 3.dp, bottom = 9.dp),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 Button(
@@ -338,7 +338,7 @@ private fun SpotlightHero(
                         contentColor = Color(0xFF10131A)
                     ),
                     shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(horizontal = 15.dp, vertical = 9.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp)
                 ) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(19.dp))
                     Text("Watch", modifier = Modifier.padding(start = 5.dp), fontWeight = FontWeight.SemiBold)
@@ -348,7 +348,7 @@ private fun SpotlightHero(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.42f)),
                     shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(horizontal = 13.dp, vertical = 9.dp)
+                    contentPadding = PaddingValues(horizontal = 11.dp, vertical = 7.dp)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Check else Icons.Filled.Add,
