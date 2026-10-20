@@ -104,7 +104,7 @@ class PlayerViewModel @Inject constructor(
             channel?.let {
                 _uiState.value = _uiState.value.copy(isFavorite = favoritesRepository.isFavorite(it.id))
                 watchHistoryRepository.recordWatch(it)
-                playSource(it.allSources.first().url)
+                it.allSources.firstOrNull()?.let { source -> playSource(source.url) }
             }
         }
     }
@@ -181,7 +181,7 @@ class PlayerViewModel @Inject constructor(
             )
             _uiState.value = _uiState.value.copy(isFavorite = favoritesRepository.isFavorite(channel.id))
             watchHistoryRepository.recordWatch(channel)
-            playSource(channel.allSources.first().url)
+            channel.allSources.firstOrNull()?.let { source -> playSource(source.url) }
         }
     }
 
