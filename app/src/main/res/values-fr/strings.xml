@@ -12,7 +12,7 @@
     <string name="light_appearance">Apparence claire</string>
     <string name="light_appearance_subtitle">Une interface de diffusion plus lumineuse</string>
     <string name="system_appearance">Apparence du système</string>
-    <string name="system_appearance_subtitle">Suivre le réglage de l'appareil</string>
+    <string name="system_appearance_subtitle">Suivre le réglage de l’appareil</string>
     <string name="section_channels">CHAÎNES</string>
     <string name="automatic_updates">Mises à jour automatiques</string>
     <string name="automatic_updates_subtitle">Actualiser le catalogue à la demande</string>
