@@ -89,7 +89,7 @@ private fun HomeTopBar() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, top = 18.dp, bottom = 8.dp)
+            .padding(horizontal = 20.dp, vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
