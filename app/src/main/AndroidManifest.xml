@@ -34,10 +34,6 @@
         android:theme="@style/Theme.StreamHubTV"
         tools:targetApi="34">
 
-        <meta-data
-            android:name="autoStoreLocales"
-            android:value="true" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
