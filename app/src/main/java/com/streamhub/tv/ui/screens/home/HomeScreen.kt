@@ -18,11 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LiveTv
-import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,12 +40,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.streamhub.tv.data.model.Channel
 import com.streamhub.tv.ui.components.CategoryRow
 import com.streamhub.tv.ui.components.FullScreenError
@@ -84,53 +86,41 @@ fun HomeScreen(
 
 @Composable
 private fun HomeTopBar() {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 20.dp, top = 18.dp, bottom = 8.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Column {
+                Text(
+                    text = "Explore",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "Live channels, picked for you",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
             Box(
                 modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(13.dp))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.32f), RoundedCornerShape(50))
+                    .padding(horizontal = 11.dp, vertical = 7.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.LiveTv,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(22.dp)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(7.dp).clip(CircleShape).background(Color(0xFFFF5964)))
+                    Text(" LIVE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                }
             }
-            Column(modifier = Modifier.padding(start = 11.dp)) {
-                Text(
-                    text = "STREAMHUB",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.4.sp
-                )
-                Text(
-                    text = "LIVE TELEVISION",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 1.2.sp
-                )
-            }
-        }
-        IconButton(onClick = { /* Reserved for live alerts. */ }) {
-            Icon(
-                imageVector = Icons.Filled.NotificationsNone,
-                contentDescription = "Notifications",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -276,7 +266,12 @@ private fun SpotlightHero(
     ) {
         if (channel.logo.isNotBlank()) {
             AsyncImage(
-                model = channel.logo,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(channel.logo)
+                    .size(600, 520)
+                    .memoryCacheKey("spotlight-${channel.logo}")
+                    .crossfade(false)
+                    .build(),
                 contentDescription = channel.name,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)

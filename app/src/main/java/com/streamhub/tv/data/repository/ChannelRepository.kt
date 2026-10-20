@@ -17,9 +17,10 @@ import javax.inject.Singleton
  * Single source of truth for the live TV channel catalogue.
  *
  * Flow:
- *  1. Try to download the JSON from the user-configured GitHub raw URL.
- *  2. On success -> persist it to Room (offline cache) and return it.
- *  3. On failure (no network, 404, malformed JSON, timeout, etc.) -> fall back to the
+ *  1. Serve the in-memory/Room cache while it is fresh (five minutes).
+ *  2. Revalidate the JSON from the user-configured GitHub raw URL when stale or forced.
+ *  3. On success -> persist it to Room (offline cache) and return it.
+ *  4. On failure (no network, 404, malformed JSON, timeout, etc.) -> fall back to the
  *     last successfully cached payload, if any, so the app still shows channels offline.
  *  4. If there is no cache either, surface an error to the UI.
  *
@@ -33,14 +34,29 @@ class ChannelRepository @Inject constructor(
     private val preferencesManager: PreferencesManager
 ) {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    @Volatile private var memoryCache: List<Channel>? = null
+    @Volatile private var memoryCachedAt: Long = 0L
+    private val cacheTtlMillis = 5 * 60 * 1000L
 
     suspend fun fetchChannels(forceRefresh: Boolean = false): Resource<List<Channel>> {
+        if (!forceRefresh) {
+            if (System.currentTimeMillis() - memoryCachedAt < cacheTtlMillis) {
+                memoryCache?.let { return Resource.Success(it) }
+            }
+            val cachedEntity = cacheDao.getCache()
+            if (cachedEntity != null && System.currentTimeMillis() - cachedEntity.cachedAt < cacheTtlMillis) {
+                return decodeCached(cachedEntity.json).also { result ->
+                    if (result is Resource.Success) {
+                        memoryCache = result.data
+                        memoryCachedAt = System.currentTimeMillis()
+                    }
+                }
+            }
+        }
         val url = preferencesManager.repoUrl.first()
 
         return try {
-            // Always revalidate on app/screen open. The old cache-first shortcut made
-            // edits to the remote channels.json invisible forever on installed builds.
-            // Keep Room as an offline fallback, while bypassing GitHub's raw edge cache.
+            // Keep cache-first startup fast, then bypass GitHub's raw edge cache when stale.
             val requestUrl = if (url.contains("raw.githubusercontent.com")) {
                 url + (if (url.contains("?")) "&" else "?") + "refresh=${System.currentTimeMillis()}"
             } else {
@@ -51,7 +67,10 @@ class ChannelRepository @Inject constructor(
                 val body = response.body()!!
                 persistCache(body, url)
                 preferencesManager.setLastSyncAt(Instant.now().toString())
-                Resource.Success(body.channels.filter { it.enabled })
+                body.channels.filter { it.enabled }.also {
+                    memoryCache = it
+                    memoryCachedAt = System.currentTimeMillis()
+                }.let { Resource.Success(it) }
             } else {
                 fallbackToCache("Server returned ${response.code()}")
             }
@@ -63,7 +82,11 @@ class ChannelRepository @Inject constructor(
     /** Returns cached channels only, without attempting a network call. Used for instant offline UI. */
     suspend fun getCachedChannels(): Resource<List<Channel>> = fallbackToCache(null)
 
-    suspend fun clearCache() = cacheDao.clearCache()
+    suspend fun clearCache() {
+        memoryCache = null
+        memoryCachedAt = 0L
+        cacheDao.clearCache()
+    }
 
     suspend fun getLastCachedAt(): Long? = cacheDao.getCache()?.cachedAt
 
@@ -79,7 +102,12 @@ class ChannelRepository @Inject constructor(
     private suspend fun fallbackToCache(errorMessage: String?): Resource<List<Channel>> {
         val cached = cacheDao.getCache()
         return if (cached != null) {
-            decodeCached(cached.json, errorMessage)
+            decodeCached(cached.json, errorMessage).also { result ->
+                if (result is Resource.Success) {
+                    memoryCache = result.data
+                    memoryCachedAt = System.currentTimeMillis()
+                }
+            }
         } else {
             Resource.Error(errorMessage ?: "No channels available and no cache found")
         }
