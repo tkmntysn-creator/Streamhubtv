@@ -16,6 +16,8 @@
     <string name="section_channels">CHANNELS</string>
     <string name="automatic_updates">Automatic updates</string>
     <string name="automatic_updates_subtitle">Refresh the live catalogue when you ask for it</string>
+    <string name="repository_configuration">Catalogue source</string>
+    <string name="repository_configuration_subtitle">Use an authorized channels.json URL</string>
     <string name="last_catalogue_sync">Last catalogue sync</string>
     <string name="section_storage">STORAGE</string>
     <string name="clear_local_cache">Clear local cache</string>

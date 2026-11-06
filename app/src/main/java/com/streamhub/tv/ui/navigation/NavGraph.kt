@@ -19,6 +19,7 @@ import com.streamhub.tv.ui.screens.home.HomeScreen
 import com.streamhub.tv.ui.screens.livetv.CategoryDetailScreen
 import com.streamhub.tv.ui.screens.livetv.LiveTvScreen
 import com.streamhub.tv.ui.screens.player.PlayerScreen
+import com.streamhub.tv.ui.screens.repoconfig.RepositoryConfigScreen
 import com.streamhub.tv.ui.screens.search.SearchScreen
 import com.streamhub.tv.ui.screens.settings.SettingsScreen
 
@@ -100,7 +101,14 @@ fun StreamHubNavHost(
             )
         }
         composable(Destination.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(
+                onRepositoryConfig = {
+                    navController.navigate(Destination.RepositoryConfig.route)
+                }
+            )
+        }
+        composable(Destination.RepositoryConfig.route) {
+            RepositoryConfigScreen(onBack = { navController.popBackStack() })
         }
         composable(
             route = Destination.Player.route,

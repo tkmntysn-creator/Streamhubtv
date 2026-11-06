@@ -16,6 +16,8 @@
     <string name="section_channels">القنوات</string>
     <string name="automatic_updates">التحديث التلقائي</string>
     <string name="automatic_updates_subtitle">تحديث قائمة القنوات عند طلبها</string>
+    <string name="repository_configuration">مصدر الكتالوج</string>
+    <string name="repository_configuration_subtitle">استخدم رابطًا مرخصًا لملف channels.json</string>
     <string name="last_catalogue_sync">آخر مزامنة للقنوات</string>
     <string name="section_storage">التخزين</string>
     <string name="clear_local_cache">مسح الذاكرة المحلية</string>

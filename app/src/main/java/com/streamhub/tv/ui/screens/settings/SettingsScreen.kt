@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +46,10 @@ import com.streamhub.tv.R
 import com.streamhub.tv.data.local.ThemeMode
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    onRepositoryConfig: () -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
     val state by viewModel.uiState.collectAsState()
 
     Column(
@@ -94,6 +98,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     subtitle = stringResource(R.string.automatic_updates_subtitle),
                     checked = state.autoUpdate,
                     onCheckedChange = viewModel::setAutoUpdate
+                )
+                SettingsDivider()
+                SettingsActionRow(
+                    icon = Icons.Filled.Storage,
+                    title = stringResource(R.string.repository_configuration),
+                    subtitle = stringResource(R.string.repository_configuration_subtitle),
+                    onClick = onRepositoryConfig
                 )
                 if (state.lastSyncAt.isNotBlank()) {
                     SettingsDivider()

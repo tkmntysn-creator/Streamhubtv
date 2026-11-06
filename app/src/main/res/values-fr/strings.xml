@@ -16,6 +16,8 @@
     <string name="section_channels">CHAÎNES</string>
     <string name="automatic_updates">Mises à jour automatiques</string>
     <string name="automatic_updates_subtitle">Actualiser le catalogue à la demande</string>
+    <string name="repository_configuration">Source du catalogue</string>
+    <string name="repository_configuration_subtitle">Utiliser une URL channels.json autorisée</string>
     <string name="last_catalogue_sync">Dernière synchronisation</string>
     <string name="section_storage">STOCKAGE</string>
     <string name="clear_local_cache">Vider le cache local</string>
