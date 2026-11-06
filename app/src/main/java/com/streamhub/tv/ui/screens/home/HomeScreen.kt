@@ -89,7 +89,7 @@ private fun HomeTopBar() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 5.dp)
+            .padding(horizontal = 18.dp, vertical = 10.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -97,6 +97,13 @@ private fun HomeTopBar() {
             verticalAlignment = Alignment.Bottom
         ) {
             Column {
+                Text(
+                    text = "STREAMHUB",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                )
                 Text(
                     text = "Explore",
                     style = MaterialTheme.typography.headlineMedium,
@@ -118,7 +125,7 @@ private fun HomeTopBar() {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(7.dp).clip(CircleShape).background(Color(0xFFFF5964)))
-                    Text(" LIVE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                    Text(" LIVE NOW", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -140,7 +147,14 @@ private fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         item(key = "category-chips", contentType = "category-chips") {
-            CategoryChipsRow(categories = state.categoryNames, onCategoryClick = onCategoryClick)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Browse by category",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+                CategoryChipsRow(categories = state.categoryNames, onCategoryClick = onCategoryClick)
+            }
         }
         if (heroChannel != null) {
             item(key = "spotlight", contentType = "spotlight") {
@@ -193,7 +207,7 @@ private fun HomeContent(
         if (state.recommended.isNotEmpty()) {
             item(key = "recommended", contentType = "channel-row") {
                 CategoryRow(
-                    title = "Recommended For You",
+                    title = "Popular on StreamHub",
                     channels = state.recommended,
                     favoriteIds = state.favoriteIds,
                     onChannelClick = onChannelClick,
@@ -251,7 +265,7 @@ private fun SpotlightHero(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .height(224.dp)
+            .height(252.dp)
             .clip(shape)
             .background(
                 Brush.linearGradient(
@@ -275,8 +289,8 @@ private fun SpotlightHero(
                 contentDescription = channel.name,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .width(142.dp)
-                    .height(224.dp),
+                    .width(176.dp)
+                    .height(252.dp),
                 contentScale = ContentScale.Crop
             )
             Box(

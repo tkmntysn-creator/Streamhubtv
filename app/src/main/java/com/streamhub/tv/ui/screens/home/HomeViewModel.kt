@@ -64,7 +64,9 @@ class HomeViewModel @Inject constructor(
             isLoading = false,
             errorMessage = null,
             featured = channels.take(1),
-            recommended = emptyList(),
+            // Deterministic editorial fallback until the remote catalogue exposes
+            // ranking metadata. The repository remains the source of truth.
+            recommended = channels.drop(1).take(12),
             categorized = categorized,
             categoryNames = categoryNames
         )
